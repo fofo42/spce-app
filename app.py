@@ -172,19 +172,23 @@ Vendes el WORKBOOK/SISTEMA generado (destaca su valor práctico, no teórico). N
 if st.session_state['modo_seleccionado'] is None:
     st.markdown('<div class="menu-card">', unsafe_allow_html=True)
     st.subheader("¿Qué quieres hacer hoy?")
-    c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
+        if st.button("🧭 ICAI (Paso 0)", use_container_width=True):
+            st.session_state['modo_seleccionado'] = 'icai'; st.rerun()
+    with c2:
         if st.button("📦 Modelar Producto", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'producto'; st.rerun()
-    with c2:
+    with c3:
         if st.button("🚀 Modelar Landing", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'landing'; st.rerun()
-    with c3:
+    with c4:
         if st.button("🔄 Flujo Completo", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'completo'; st.rerun()
-    with c4:
+    with c5:
         if st.button("🎨 Design Pack", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'design'; st.rerun()
+
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("""
     - **📦 Modelar Producto**: sube TU producto (PDF/capturas) + referencias de estilo, y crea un producto superior en formato Workbook PDF.
@@ -243,6 +247,9 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
                 prod_texto, prod_bloques = procesar_archivos(uploaded_producto, "PRODUCTO A MODELAR")
 
                 contenido = []
+                feed0 = st.session_state.get('icai_offer_feed', '')
+                if feed0:
+                    contenido.append({"type": "text", "text": f"=== INTELIGENCIA ICAI (OFFER_FEED) ===\nContexto prioritario de cliente (segmentos, dolores, lenguaje, objeciones, triggers):\n{feed0}"})
                 contenido.append({"type": "text", "text": f"""=== REFERENCIA DE ESTILO/MODELADO ===
 (Úsala SOLO para extraer estilo, patrones, estructura y técnicas. NO copies su contenido.)
 URL: {referencia_url or '-'}
@@ -363,7 +370,9 @@ Genera el Brief de Construcción completo para Lovable:
 1) Sistema de Diseño (mobile-first, paleta, tipografía).
 2) Bloques en orden: Hero → Problema/Agitación → Solución (módulos prácticos del producto) → Demo visual (placeholder) → Oferta+Precio+Garantía → FAQ estratégico → CTA final. Copy EXACTO de cada bloque.
 3) Instrucciones técnicas (placeholders sin stock, botones full-width, acordeón FAQ).
-4) Auditoría CRO final (score 0-10, riesgos, próximos pasos)."""
+4) Auditoría CRO final (score 0-10, riesgos, próximos pasos)."""                feed2 = st.session_state.get('icai_spce_feed', '')
+                if feed2:
+                    prompt += f"\n\n=== INTELIGENCIA ICAI (SPCE_FEED) ===\n{feed2}"
                 try:
                     client = anthropic.Anthropic(api_key=api_key)
                     response = client.messages.create(
@@ -390,5 +399,18 @@ if st.session_state['modo_seleccionado'] == 'design':
         st.error(f"⚠️ Módulo Design Pack no disponible: {e}")
         st.markdown("El archivo `design_pack.py` debe estar en la **misma carpeta** que `app.py` (y en la raíz del repositorio en GitHub).")
         if st.button("⬅️ Volver al menú", key="v4"):
+            st.session_state['modo_seleccionado'] = None
+            st.rerun()
+# ═══════════════════════════════════════════════════════════════
+# MODO 5: ICAI (Paso 0 — Inteligencia de Cliente)
+# ═══════════════════════════════════════════════════════════════
+if st.session_state['modo_seleccionado'] == 'icai':
+    try:
+        import icai_engine
+        icai_engine.render(api_key, MODEL_ID)
+    except Exception as e:
+        st.error(f"⚠️ Módulo ICAI no disponible: {e}")
+        st.markdown("El archivo `icai_engine.py` debe estar junto a `app.py` (y en la raíz del repo).")
+        if st.button("⬅️ Volver al menú", key="v6"):
             st.session_state['modo_seleccionado'] = None
             st.rerun()
