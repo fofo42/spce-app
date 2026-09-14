@@ -1,3 +1,4 @@
+import observability as obs
 import streamlit as st
 import anthropic
 import io
@@ -83,7 +84,7 @@ st.title("🧠 ECOSISTEMA UNIFICADO: ICAI + Offer Engine + SPCE")
 st.markdown("*Capa 0 (cliente) → Oferta → Landing → Diseño, con inteligencia encadenada.*")
 
 # ═══════════════════════════════════════════════════════════════
-# SIDEBAR: API KEY + SELECTOR DE MODELO
+# SIDEBAR: API KEY + MODELO + OBSERVABILIDAD
 # ═══════════════════════════════════════════════════════════════
 MODELOS = {
     "Claude Sonnet 4.5 (recomendado)": "claude-sonnet-4-5",
@@ -119,6 +120,7 @@ with st.sidebar:
         save_config(api_key if api_key else saved_api_key, MODEL_ID)
     st.markdown("---")
     st.info("💡 Key gratis: [console.anthropic.com](https://console.anthropic.com)")
+    obs.render_sidebar()
 
 # ═══════════════════════════════════════════════════════════════
 # ESTADO DE SESIÓN
@@ -297,14 +299,13 @@ TIPO: {tipo_producto} | AVATAR: {avatar} | TRANSFORMACIÓN: {transformacion}
 INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloques con separadores exactos."""})
 
                 try:
-                    client = anthropic.Anthropic(api_key=api_key)
+                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
                     response = client.messages.create(
                         model=MODEL_ID, max_tokens=20000,
                         system=OFFER_SYSTEM,
                         messages=[{"role": "user", "content": contenido}]
                     )
                     full_output = response.content[0].text
-
                     audit, html_part, roadmap = "", full_output, ""
                     if "=== FIN_DEL_PDF ===" in full_output:
                         left, roadmap = full_output.split("=== FIN_DEL_PDF ===", 1)
@@ -312,11 +313,11 @@ INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloq
                         left = full_output
                     if "=== FIN_AUDIT ===" in left:
                         audit, html_part = left.split("=== FIN_AUDIT ===", 1)
-
                     st.session_state['producto_audit'] = audit.strip()
                     st.session_state['producto_html'] = html_part.strip()
                     st.session_state['producto_roadmap'] = roadmap.strip()
                     st.success("✅ Motor V1.0.1 completado: auditoría, workbook y roadmap generados.")
+                    st.caption(obs.last_line())
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
@@ -324,7 +325,6 @@ INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloq
         if st.session_state['producto_audit']:
             with st.expander("🧾 Auditoría Ingenieril (Quality Gates, DQS y decisiones)", expanded=False):
                 st.markdown(st.session_state['producto_audit'])
-
         st.markdown("### 📄 Vista Previa del Workbook:")
         st.markdown(st.session_state['producto_html'], unsafe_allow_html=True)
 
@@ -415,13 +415,14 @@ Genera el Brief de Construcción completo para Lovable:
 3) Instrucciones técnicas (placeholders sin stock, botones full-width, acordeón FAQ).
 4) Auditoría CRO final (score 0-10, riesgos, próximos pasos)."""
                 try:
-                    client = anthropic.Anthropic(api_key=api_key)
+                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
                     response = client.messages.create(
                         model=MODEL_ID, max_tokens=8000,
                         system=SPCE_SYSTEM,
                         messages=[{"role": "user", "content": prompt}]
                     )
                     st.success("✅ ¡Brief de Landing generado!")
+                    st.caption(obs.last_line())
                     st.markdown(response.content[0].text)
                     st.download_button("📥 Descargar Brief", data=response.content[0].text,
                                        file_name="brief_landing.txt", mime="text/plain")
