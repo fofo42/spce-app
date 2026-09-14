@@ -387,4 +387,8 @@ if st.session_state['modo_seleccionado'] == 'design':
         import design_pack
         design_pack.render(api_key, MODEL_ID, st.session_state.get('producto_html'))
     except Exception as e:
-        st.error(f"⚠️ Módulo Design Pack no disponible: {e}. Sube design_pack.py al repositorio.")
+        st.error(f"⚠️ Módulo Design Pack no disponible: {e}")
+        st.markdown("El archivo `design_pack.py` debe estar en la **misma carpeta** que `app.py` (y en la raíz del repositorio en GitHub).")
+        if st.button("⬅️ Volver al menú", key="v4"):
+            st.session_state['modo_seleccionado'] = None
+            st.rerun()
