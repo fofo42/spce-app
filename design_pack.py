@@ -95,7 +95,9 @@ def render(api_key, model_id, producto_html=None):
 
 FORMATO OBJETIVO: {formato}
 
-Genera los 4 bloques con sus separadores exactos."""})
+Genera los 4 bloques con sus separadores exactos."""})            feed3 = st.session_state.get('icai_design_feed', '')
+            if feed3:
+                contenido_mensaje.append({"type": "text", "text": f"=== INTELIGENCIA ICAI (DESIGN_FEED) ===\n{feed3}"})
                 try:
                     client = anthropic.Anthropic(api_key=api_key)
                     resp = client.messages.create(model=model_id, max_tokens=4000,
