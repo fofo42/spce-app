@@ -1,3 +1,4 @@
+import observability as obs
 import streamlit as st
 import anthropic
 import base64
@@ -142,7 +143,7 @@ def render(api_key, model_id):
                 contenido.append({"type": "text", "text":
                     "Ejecuta el proceso completo y entrega todas las secciones con sus separadores exactos."})
                 try:
-                    client = anthropic.Anthropic(api_key=api_key)
+                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
                     resp = client.messages.create(model=model_id, max_tokens=20000,
                         system=ICAI_SYSTEM, messages=[{"role": "user", "content": contenido}])
                     out = resp.content[0].text
