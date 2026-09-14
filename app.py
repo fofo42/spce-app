@@ -37,7 +37,6 @@ saved_model = config.get("model_id", "claude-sonnet-4-5")
 # HELPERS DE ARCHIVOS
 # ═══════════════════════════════════════════════════════════════
 def procesar_archivos(files, etiqueta):
-    """Extrae texto de PDFs y convierte imágenes en bloques de visión etiquetados."""
     texto = ""
     bloques = []
     for f in files or []:
@@ -80,8 +79,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🧠 ECOSISTEMA UNIFICADO: Offer Engine + SPCE")
-st.markdown("*Modela productos de alto valor (Workbook PDF) y crea landings de alta conversión.*")
+st.title("🧠 ECOSISTEMA UNIFICADO: ICAI + Offer Engine + SPCE")
+st.markdown("*Capa 0 (cliente) → Oferta → Landing → Diseño, con inteligencia encadenada.*")
 
 # ═══════════════════════════════════════════════════════════════
 # SIDEBAR: API KEY + SELECTOR DE MODELO
@@ -125,54 +124,71 @@ with st.sidebar:
 # ESTADO DE SESIÓN
 # ═══════════════════════════════════════════════════════════════
 for k, v in {"modo_seleccionado": None, "producto_html": None,
-             "instrucciones_ia": None, "continuar_landing": False}.items():
+             "producto_audit": None, "producto_roadmap": None,
+             "continuar_landing": False}.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
 # ═══════════════════════════════════════════════════════════════
 # PROMPTS MAESTROS
 # ═══════════════════════════════════════════════════════════════
-OFFER_SYSTEM = """Eres el OFFER MODELING & ENGINEERING ENGINE (V1.0.1).
+OFFER_SYSTEM = """Eres el OFFER MODELING & ENGINEERING ENGINE V1.0.1 (motor completo).
 
-DISTINCIÓN OBLIGATORIA DE INPUTS:
-- REFERENCIA DE ESTILO: sirve SOLO para extraer estilo, patrones, estructura y técnicas. NUNCA copies su contenido.
-- PRODUCTO BASE: es el contenido real que debes remodelar y superar. El nuevo producto se construye SOBRE este contenido.
+DISTINCIÓN DE INPUTS:
+- REFERENCIA DE ESTILO: solo para extraer estilo, patrones y técnicas. NUNCA copies su contenido.
+- PRODUCTO BASE: contenido real que debes remodelar y superar.
+- INTELIGENCIA ICAI (si existe): contexto prioritario de cliente (segmentos, dolores, lenguaje, objeciones, triggers).
 
-PRINCIPIOS INVARIABLES:
-- TRANSFORMATION FIRST: la oferta se construye alrededor de la transformación, no de la cantidad de contenido.
-- PROBLEM TO DELIVERABLE: cada problema relevante se convierte en un entregable.
-- ACTION OVER INFORMATION: prioriza CHECKLIST, WORKSHEET, TRACKER, TEMPLATE, SCORECARD, PROTOCOL, ROUTINE y DECISION TOOL. GUIDE solo como último recurso.
-- SIMPLICITY: comprensible para principiantes absolutos.
-- PRINTABILITY: todo entregable debe poder imprimirse y rellenarse (casillas, tablas, espacios de escritura).
-- NO FILLER: ningún entregable de relleno.
-- NO INVENTION: nunca inventes resultados, testimonios, credenciales, garantías ni datos. Si falta información: UNKNOWN.
+INVARIANTES (SIEMPRE ACTIVOS):
+INV-01 NO INVENTION: nunca inventes resultados, testimonios, credenciales, estudios, garantías, precios ni datos.
+INV-02 TRANSFORMATION FIRST: la oferta se construye alrededor de la transformación, no del volumen de contenido.
+INV-03 EVIDENCE ≠ INFERENCE: separa siempre evidencia, inferencia e hipótesis.
+INV-04 UNKNOWN IS VALID: si falta información, UNKNOWN es preferible a inventar.
+INV-05 PRACTICALITY > CONTENT VOLUME: prioriza CHECKLIST, WORKSHEET, TRACKER, TEMPLATE, SCORECARD, DECISION TOOL, PROTOCOL, ROUTINE, QUICK REFERENCE. GUIDE solo como último recurso justificado.
+INV-06 BEGINNER-FIRST: comprensible sin conocimientos previos, sin jerga.
+INV-07 PRINTABILITY: espacios de escritura, casillas, tablas, campos, instrucciones cortas.
+INV-08 REDUNDANCY CONTROL: dos entregables que resuelven el mismo problema → MERGE o REMOVE.
+INV-09 CORE ≠ BONUS: si un componente es necesario para la transformación, es CORE, nunca bonus decorativo.
 
 LOS 6 PILARES OBLIGATORIOS (cada uno produce INSIGHT → NEED → SOLUTION → DELIVERABLE):
 P01 TRANSFORMATION DIFFICULTY | P02 SPEED TO RESULT | P03 PROCESS SUPPORT
 P04 FUTURE PROBLEM PREVENTION | P05 BLIND SPOTS | P06 PROCESS MEASUREMENT
 
-OBJETIVO: Minimum Viable Transformation System. La menor arquitectura capaz de cubrir los obstáculos esenciales, con alto valor percibido y baja fricción.
+SELECCIÓN DE FORMATO (IF/THEN):
+comprobar→CHECKLIST | completar→WORKSHEET | registrar→TRACKER/LOG | reutilizar→TEMPLATE |
+medir→SCORECARD | diagnosticar→DIAGNOSTIC | decidir→DECISION TOOL | ejecutar→PROTOCOL/ACTION PLAN |
+practicar→EXERCISE | consultar rápido→QUICK REFERENCE | calcular→CALCULATOR | rutinizar→ROUTINE |
+comprender antes de actuar→GUIDE (último recurso).
 
-FORMATO DE SALIDA OBLIGATORIO:
-PARTE A: Documento HTML completo y autocontenido (incluye <html>, <head> con <style> para A4, y <body>) tipo WORKBOOK profesional:
-- Portada centrada: nombre del producto + promesa (DE: estado actual → A: estado deseado) + lista de qué incluye.
-- Una sección <h1> por cada uno de los 6 PILARES con sus entregables prácticos: tablas con bordes, casillas &#9744;, espacios de escritura (div con borde inferior), cajas de consejo/advertencia y saltos de página (class="page-break").
-- Cero texto de relleno. Todo accionable.
-PARTE B (tras el separador): instrucciones paso a paso para maquetar este contenido en Gamma / Canva / Notion + estructura de carpetas recomendada (01_CORE_TRANSFORMATION, 02_SPEED, 03_SUPPORT, 04_PREVENTION, 05_BLIND_SPOTS, 06_MEASUREMENT, 07_BONUSES).
-SEPARADOR EXACTO entre Parte A y Parte B: === FIN_DEL_PDF ===
-No escribas nada fuera de esas dos partes."""
+QUALITY GATES POR ENTREGABLE (DQS 0-100):
+DQS = 0.20×Problem Relevance + 0.20×Transformation Impact + 0.15×Practicality + 0.15×Ease of Use + 0.10×Printability + 0.10×Perceived Value + 0.10×Complementarity
+DECISIONES: ≥85 ACCEPT | 70-84 ACCEPT_WITH_IMPROVEMENT | 55-69 IMPROVE | 40-54 SIMPLIFY/REDESIGN | <40 REJECT.
+HARD GATES: no accionable → REJECT | sin relevancia de transformación → REJECT | redundante → MERGE | demasiado complejo para el avatar → SIMPLIFY | no imprimible siendo práctico → REWORK.
+
+PROCESO INTERNO OBLIGATORIO (no omitas pasos):
+1 Extraer producto base. 2 Transformation Map (current → stages → desired). 3 Cliente y obstáculos.
+4 Seis pilares. 5 Gap analysis (prioridad = impacto × frecuencia × urgencia × riesgo). 6 Engineering de entregables.
+7 Evaluación DQS + gates. 8 Arquitectura (CORE → SUPPORT → MEASUREMENT → PREVENTION → BONUSES). 9 Validación final.
+
+SALIDA EXACTA EN 3 BLOQUES CON ESTOS SEPARADORES:
+=== FIN_AUDIT ===
+(AUDITORÍA INGENIERIL breve en español: Transformation Map en 3 líneas; tabla de pilares [Pilar|Insight|Need|Deliverable|Formato]; Deliverable Matrix [ID|Nombre|Formato|Problema que resuelve|DQS|Decisión]; entregables RECHAZADOS o FUSIONADOS con su motivo; UNKNOWNs y warnings.)
+(Después, HTML COMPLETO del WORKBOOK: <html><head><style> para A4 </style></head><body> con portada centrada (nombre + promesa DE→A + qué incluye) y una sección <h1> por pilar con sus entregables APROBADOS: tablas con bordes, casillas &#9744;, espacios de escritura, cajas de consejo/advertencia, saltos class="page-break". Cero relleno.)
+=== FIN_DEL_PDF ===
+(ROADMAP: estructura de carpetas OFFER/01_CORE_TRANSFORMATION…07_BONUSES indicando qué entregable va en cada una; qué crear con Claude, qué con Gamma, qué con hoja de cálculo; orden de creación y dependencias; instrucciones de maquetación.)
+No escribas nada fuera de esos 3 bloques."""
 
 SPCE_SYSTEM = """Eres el SALES PAGE CONVERSION ENGINE (SPCE).
 REGLAS: Mobile-First, Anti-Invención, Message Match, Beneficios > Características, CTA en primera persona repetido 3+ veces.
 Vendes el WORKBOOK/SISTEMA generado (destaca su valor práctico, no teórico). Nunca inventes testimonios, cifras ni escasez."""
 
 # ═══════════════════════════════════════════════════════════════
-# MENÚ INICIAL
+# MENÚ INICIAL (5 MODOS)
 # ═══════════════════════════════════════════════════════════════
 if st.session_state['modo_seleccionado'] is None:
     st.markdown('<div class="menu-card">', unsafe_allow_html=True)
     st.subheader("¿Qué quieres hacer hoy?")
-        c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         if st.button("🧭 ICAI (Paso 0)", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'icai'; st.rerun()
@@ -188,30 +204,46 @@ if st.session_state['modo_seleccionado'] is None:
     with c5:
         if st.button("🎨 Design Pack", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'design'; st.rerun()
-
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("""
-    - **📦 Modelar Producto**: sube TU producto (PDF/capturas) + referencias de estilo, y crea un producto superior en formato Workbook PDF.
-    - **🚀 Modelar Landing**: genera el brief de página de ventas para Lovable.
+    - **🧭 ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
+    - **📦 Modelar Producto**: Offer Engine V1.0.1: auditoría con DQS + Workbook PDF + Roadmap de carpetas.
+    - **🚀 Modelar Landing**: brief de página de ventas para Lovable.
     - **🔄 Flujo Completo**: primero el producto; si te convence, pasas a la landing.
     - **🎨 Design Pack**: prompts listos para Canva/Gamma/Bing con tu estilo visual.
     """)
     st.stop()
 
 # ═══════════════════════════════════════════════════════════════
-# FASE 1: MODELAR PRODUCTO (OFFER ENGINE)
+# MODO 0: ICAI (CAPA DE INTELIGENCIA DE CLIENTE)
+# ═══════════════════════════════════════════════════════════════
+if st.session_state['modo_seleccionado'] == 'icai':
+    try:
+        import icai_engine
+        icai_engine.render(api_key, MODEL_ID)
+    except Exception as e:
+        st.error(f"⚠️ Módulo ICAI no disponible: {e}")
+        st.markdown("El archivo `icai_engine.py` debe estar junto a `app.py` (y en la raíz del repo).")
+        if st.button("⬅️ Volver al menú", key="v7"):
+            st.session_state['modo_seleccionado'] = None
+            st.rerun()
+
+# ═══════════════════════════════════════════════════════════════
+# FASE 1: MODELAR PRODUCTO (OFFER ENGINE V1.0.1)
 # ═══════════════════════════════════════════════════════════════
 if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     st.markdown('<div class="phase-container">', unsafe_allow_html=True)
-    st.subheader("📦 FASE 1: Offer Engine — Modelar Nuevo Producto")
+    st.subheader("📦 FASE 1: Offer Engine V1.0.1 — Modelar Nuevo Producto")
 
     if st.button("⬅️ Volver al menú", key="v1"):
         st.session_state.update({'modo_seleccionado': None, 'continuar_landing': False})
         st.rerun()
 
-    # ── BLOQUE A: REFERENCIA DE ESTILO / MODELADO ──
+    feed0 = st.session_state.get('icai_offer_feed', '')
+    if feed0:
+        st.info("🧠 Inteligencia ICAI conectada: el Offer Engine usará el OFFER_FEED del dossier de cliente.")
+
     st.markdown("#### 🎯 A) Referencia de estilo y modelado *(cómo debe quedar)*")
-    st.markdown("Capturas, URLs o descripciones de ofertas que te gusten. Solo se usarán para extraer **estilo y patrones**, nunca contenido.")
     c1, c2 = st.columns(2)
     with c1:
         referencia_url = st.text_input("URL de referencia (opcional)")
@@ -223,12 +255,10 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
             ["Ebook/Guía", "Plantilla de Notion", "Curso Online", "Libro de Recetas",
              "Software/SaaS", "Servicio", "Otro"])
 
-    # ── BLOQUE B: TU PRODUCTO A MODELAR ──
     st.markdown("#### 📄 B) TU PRODUCTO a modelar *(el contenido real)*")
-    st.markdown("Sube aquí el producto que quieres remodelar y superar: tu ebook, recetario, plantilla, guía... (PDF, PNG o JPG, varios archivos permitidos).")
     uploaded_producto = st.file_uploader("Sube TU producto (PDF/PNG/JPG)",
         type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key="prod_files")
-    descripcion_producto = st.text_area("O describe tu producto si no tienes archivos (opcional si subes archivos)", height=90)
+    descripcion_producto = st.text_area("O describe tu producto si no tienes archivos", height=90)
 
     c3, c4 = st.columns(2)
     with c3:
@@ -236,59 +266,65 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     with c4:
         transformacion = st.text_input("Transformación deseada", placeholder="Ej: cocinar 2 veces/semana y tener comida para 7 días")
 
-    if st.button("🧠 Analizar y Generar Producto de Alto Valor", type="primary", use_container_width=True):
+    if st.button("🧠 Ejecutar Motor V1.0.1 (Auditoría + Workbook + Roadmap)", type="primary", use_container_width=True):
         if not api_key:
             st.error("⚠️ Introduce tu API Key en la barra lateral")
         elif not uploaded_producto and not descripcion_producto.strip():
-            st.error("⚠️ Falta TU PRODUCTO: sube archivos en el Bloque B o descríbelo en el campo de texto.")
+            st.error("⚠️ Falta TU PRODUCTO: sube archivos en el Bloque B o descríbelo.")
         else:
-            with st.spinner("🔍 Analizando producto base + estilo de referencia, aplicando 6 Pilares..."):
+            with st.spinner("🧠 Ejecutando State Machine: extracción → pilares → gaps → DQS → arquitectura → validación..."):
                 ref_texto, ref_bloques = procesar_archivos(uploaded_ref, "REFERENCIA DE ESTILO")
                 prod_texto, prod_bloques = procesar_archivos(uploaded_producto, "PRODUCTO A MODELAR")
 
                 contenido = []
-                feed0 = st.session_state.get('icai_offer_feed', '')
                 if feed0:
-                    contenido.append({"type": "text", "text": f"=== INTELIGENCIA ICAI (OFFER_FEED) ===\nContexto prioritario de cliente (segmentos, dolores, lenguaje, objeciones, triggers):\n{feed0}"})
+                    contenido.append({"type": "text", "text":
+                        f"=== INTELIGENCIA ICAI (OFFER_FEED) ===\nContexto prioritario de cliente:\n{feed0}"})
                 contenido.append({"type": "text", "text": f"""=== REFERENCIA DE ESTILO/MODELADO ===
-(Úsala SOLO para extraer estilo, patrones, estructura y técnicas. NO copies su contenido.)
+(Úsala SOLO para estilo/patrones/técnicas. NO copies su contenido.)
 URL: {referencia_url or '-'}
 Descripción: {descripcion_ref or '-'}
 {ref_texto}"""})
                 contenido.extend(ref_bloques)
-
                 contenido.append({"type": "text", "text": f"""=== PRODUCTO REAL A MODELAR ===
-(Este es el contenido base. Construye el nuevo producto SUPERIOR a partir de este material.)
+(Contenido base. Construye el producto SUPERIOR a partir de aquí.)
 {prod_texto}
-Descripción adicional del producto: {descripcion_producto or '-'}"""})
+Descripción adicional: {descripcion_producto or '-'}"""})
                 contenido.extend(prod_bloques)
-
                 contenido.append({"type": "text", "text": f"""DATOS DEL PROYECTO:
-TIPO: {tipo_producto} | AVATAR: {avatar} | TRANSFORMACIÓN DESEADA: {transformacion}
+TIPO: {tipo_producto} | AVATAR: {avatar} | TRANSFORMACIÓN: {transformacion}
 
-INSTRUCCIÓN: Aplica tus 6 pilares y tu formato de salida obligatorio sobre el PRODUCTO REAL,
-usando la REFERENCIA únicamente como estilo/patrones. Diseña el NUEVO PRODUCTO SUPERIOR."""})
+INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloques con separadores exactos."""})
 
                 try:
                     client = anthropic.Anthropic(api_key=api_key)
                     response = client.messages.create(
-                        model=MODEL_ID, max_tokens=16000,
+                        model=MODEL_ID, max_tokens=20000,
                         system=OFFER_SYSTEM,
                         messages=[{"role": "user", "content": contenido}]
                     )
                     full_output = response.content[0].text
+
+                    audit, html_part, roadmap = "", full_output, ""
                     if "=== FIN_DEL_PDF ===" in full_output:
-                        html_part, instr_part = full_output.split("=== FIN_DEL_PDF ===", 1)
+                        left, roadmap = full_output.split("=== FIN_DEL_PDF ===", 1)
                     else:
-                        html_part, instr_part = full_output, "(sin instrucciones separadas)"
+                        left = full_output
+                    if "=== FIN_AUDIT ===" in left:
+                        audit, html_part = left.split("=== FIN_AUDIT ===", 1)
+
+                    st.session_state['producto_audit'] = audit.strip()
                     st.session_state['producto_html'] = html_part.strip()
-                    st.session_state['instrucciones_ia'] = instr_part.strip()
-                    st.success("✅ ¡Producto de Alto Valor diseñado!")
+                    st.session_state['producto_roadmap'] = roadmap.strip()
+                    st.success("✅ Motor V1.0.1 completado: auditoría, workbook y roadmap generados.")
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
-    # ── Resultados Fase 1 ──
     if st.session_state['producto_html']:
+        if st.session_state['producto_audit']:
+            with st.expander("🧾 Auditoría Ingenieril (Quality Gates, DQS y decisiones)", expanded=False):
+                st.markdown(st.session_state['producto_audit'])
+
         st.markdown("### 📄 Vista Previa del Workbook:")
         st.markdown(st.session_state['producto_html'], unsafe_allow_html=True)
 
@@ -310,8 +346,9 @@ usando la REFERENCIA únicamente como estilo/patrones. Diseña el NUEVO PRODUCTO
                 st.download_button("⬇️ Guardar PDF Ahora", data=buffer,
                                    file_name="producto_alto_valor.pdf", mime="application/pdf")
         with c6:
-            st.markdown("### 🎨 Instrucciones Gamma/Canva/Notion")
-            st.markdown(st.session_state['instrucciones_ia'])
+            if st.session_state['producto_roadmap']:
+                st.markdown("### 🗂️ Roadmap de Carpetas y Creación con IA")
+                st.markdown(st.session_state['producto_roadmap'])
 
         if st.session_state['modo_seleccionado'] == 'completo':
             st.markdown("---")
@@ -340,8 +377,11 @@ if st.session_state['modo_seleccionado'] == 'landing' or st.session_state['conti
         st.session_state.update({'modo_seleccionado': None, 'continuar_landing': False})
         st.rerun()
 
+    feed2 = st.session_state.get('icai_spce_feed', '')
+    if feed2:
+        st.info("🧠 Inteligencia ICAI conectada: el SPCE usará el SPCE_FEED (mensajes por awareness, hooks, objeciones→FAQ).")
+
     if st.session_state['continuar_landing'] and st.session_state['producto_html']:
-        st.info("✅ Usando el producto modelado en la Fase 1 como base")
         producto_ctx = re.sub(r'<[^>]+>', ' ', st.session_state['producto_html'])
         producto_ctx = re.sub(r'\s+', ' ', producto_ctx)[:6000]
     else:
@@ -365,14 +405,15 @@ if st.session_state['modo_seleccionado'] == 'landing' or st.session_state['conti
 {producto_ctx}
 
 PRECIO: {precio} | GARANTÍA: {garantia} | GANCHO DEL ANUNCIO: {gancho}
-
+"""
+                if feed2:
+                    prompt += f"\n=== INTELIGENCIA ICAI (SPCE_FEED) ===\n{feed2}\n"
+                prompt += """
 Genera el Brief de Construcción completo para Lovable:
 1) Sistema de Diseño (mobile-first, paleta, tipografía).
-2) Bloques en orden: Hero → Problema/Agitación → Solución (módulos prácticos del producto) → Demo visual (placeholder) → Oferta+Precio+Garantía → FAQ estratégico → CTA final. Copy EXACTO de cada bloque.
+2) Bloques en orden: Hero → Problema/Agitación → Solución (módulos prácticos) → Demo visual (placeholder) → Oferta+Precio+Garantía → FAQ estratégico → CTA final. Copy EXACTO de cada bloque.
 3) Instrucciones técnicas (placeholders sin stock, botones full-width, acordeón FAQ).
-4) Auditoría CRO final (score 0-10, riesgos, próximos pasos)."""                feed2 = st.session_state.get('icai_spce_feed', '')
-                if feed2:
-                    prompt += f"\n\n=== INTELIGENCIA ICAI (SPCE_FEED) ===\n{feed2}"
+4) Auditoría CRO final (score 0-10, riesgos, próximos pasos)."""
                 try:
                     client = anthropic.Anthropic(api_key=api_key)
                     response = client.messages.create(
@@ -397,20 +438,7 @@ if st.session_state['modo_seleccionado'] == 'design':
         design_pack.render(api_key, MODEL_ID, st.session_state.get('producto_html'))
     except Exception as e:
         st.error(f"⚠️ Módulo Design Pack no disponible: {e}")
-        st.markdown("El archivo `design_pack.py` debe estar en la **misma carpeta** que `app.py` (y en la raíz del repositorio en GitHub).")
+        st.markdown("El archivo `design_pack.py` debe estar junto a `app.py` (y en la raíz del repo).")
         if st.button("⬅️ Volver al menú", key="v4"):
-            st.session_state['modo_seleccionado'] = None
-            st.rerun()
-# ═══════════════════════════════════════════════════════════════
-# MODO 5: ICAI (Paso 0 — Inteligencia de Cliente)
-# ═══════════════════════════════════════════════════════════════
-if st.session_state['modo_seleccionado'] == 'icai':
-    try:
-        import icai_engine
-        icai_engine.render(api_key, MODEL_ID)
-    except Exception as e:
-        st.error(f"⚠️ Módulo ICAI no disponible: {e}")
-        st.markdown("El archivo `icai_engine.py` debe estar junto a `app.py` (y en la raíz del repo).")
-        if st.button("⬅️ Volver al menú", key="v6"):
             st.session_state['modo_seleccionado'] = None
             st.rerun()
