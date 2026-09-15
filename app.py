@@ -8,12 +8,6 @@ import base64
 from xhtml2pdf import pisa
 
 # ═══════════════════════════════════════════════════════════════
-# API KEY (segura, desde Streamlit Secrets — nunca en disco)
-# ═══════════════════════════════════════════════════════════════
-saved_api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-saved_model = "claude-sonnet-4-5"
-
-# ═══════════════════════════════════════════════════════════════
 # HELPERS DE ARCHIVOS
 # ═══════════════════════════════════════════════════════════════
 def procesar_archivos(files, etiqueta):
@@ -37,6 +31,21 @@ def procesar_archivos(files, etiqueta):
 # TEMA OSCURO
 # ═══════════════════════════════════════════════════════════════
 st.set_page_config(page_title="Ecosistema Unificado", page_icon="🧠", layout="wide")
+
+# ═══════════════════════════════════════════════════════════════
+# API KEY (desde Streamlit Secrets — nunca en disco)
+# ═══════════════════════════════════════════════════════════════
+# OJO: st.secrets.get() NO absorbe la ausencia de secretos. Si no existe
+# .streamlit/secrets.toml, Streamlit lanza StreamlitSecretNotFoundError
+# incluso con valor por defecto, y al estar en el nivel de módulo la app
+# no llegaba a arrancar. Ahora es un caso previsto: se pide la clave en la
+# barra lateral y solo vive en memoria durante la sesión.
+try:
+    saved_api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+except Exception:
+    saved_api_key = ""
+
+saved_model = "claude-sonnet-4-5"
 
 st.markdown("""
 <style>
