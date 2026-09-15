@@ -49,6 +49,30 @@ class _Messages:
         resp = self._m.create(**kwargs)
         record(self._model, getattr(resp, "usage", None), time.perf_counter() - t0)
         return resp
+    def stream(self, **kwargs):
+        return _StreamWrapper(self._m.stream(**kwargs), self._model)
+
+class _StreamWrapper:
+    """Envuelve el 'stream' de Anthropic para poder seguir contando
+    coste/tokens (igual que con .create) también en modo 'en vivo'."""
+    def __init__(self, stream_ctx, model_id):
+        self._ctx = stream_ctx
+        self._model = model_id
+        self._t0 = None
+        self._stream = None
+    def __enter__(self):
+        self._t0 = time.perf_counter()
+        self._stream = self._ctx.__enter__()
+        return self
+    def __exit__(self, *args):
+        return self._ctx.__exit__(*args)
+    @property
+    def text_stream(self):
+        return self._stream.text_stream
+    def get_final_message(self):
+        msg = self._stream.get_final_message()
+        record(self._model, getattr(msg, "usage", None), time.perf_counter() - self._t0)
+        return msg
 
 class _ClientProxy:
     def __init__(self, client, model_id):
