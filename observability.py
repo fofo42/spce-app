@@ -39,7 +39,7 @@ def last_line():
         return ""
     el, inp, out, cost, model = o["last"]
     return (f"⏱️ {el:.1f} s · 🔢 {inp + out:,} tokens (↑{inp:,} entrada / ↓{out:,} salida) · "
-            f"💰 ≈ ${cost:.4f} · modelo: {model}")
+            f" ≈ ${cost:.4f} · modelo: {model}")
 
 class _Messages:
     def __init__(self, messages, model_id):
