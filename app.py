@@ -7,6 +7,8 @@ import re
 import base64
 from xhtml2pdf import pisa
 
+from sanitize import limpiar_html
+
 # ═══════════════════════════════════════════════════════════════
 # HELPERS DE ARCHIVOS
 # ═══════════════════════════════════════════════════════════════
@@ -69,6 +71,25 @@ st.markdown("""
         background: rgba(0, 212, 255, 0.1); border: 1px solid #00d4ff;
         border-radius: 8px; padding: 15px; margin: 15px 0;
     }
+    /* El workbook se previsualiza como papel: las tablas HTML crudas no las
+       estiliza Streamlit, y sobre el fondo oscuro no se leerían. Este CSS es
+       de maquetación del documento, no del chrome de la app. */
+    .workbook-preview {
+        background: #ffffff; border-radius: 8px; padding: 28px;
+        margin: 10px 0; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    }
+    .workbook-preview h1, .workbook-preview h2, .workbook-preview h3,
+    .workbook-preview h4 { color: #004466 !important; text-shadow: none !important; }
+    .workbook-preview p, .workbook-preview li, .workbook-preview td,
+    .workbook-preview th, .workbook-preview div, .workbook-preview span,
+    .workbook-preview small, .workbook-preview strong, .workbook-preview em {
+        color: #222222 !important;
+    }
+    .workbook-preview table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    .workbook-preview th, .workbook-preview td {
+        border: 1px solid #cccccc; padding: 8px; text-align: left;
+    }
+    .workbook-preview th { background: #f0f4f8; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -107,6 +128,75 @@ with st.sidebar:
     st.markdown("---")
     st.info("💡 Key gratis: [console.anthropic.com](https://console.anthropic.com)")
     obs.render_sidebar()
+
+# ═══════════════════════════════════════════════════════════════
+# WORKBOOK: VISTA PREVIA SEGURA Y PDF
+# ═══════════════════════════════════════════════════════════════
+CSS_IMPRESION = (
+    "<style>"
+    "body{font-family:Helvetica;color:#222;padding:40px;line-height:1.5;}"
+    "h1{color:#004466;border-bottom:3px solid #004466;padding-bottom:10px;}"
+    "h2{color:#006699;margin-top:25px;}"
+    "table{width:100%;border-collapse:collapse;margin:15px 0;}"
+    "th,td{border:1px solid #ccc;padding:10px;text-align:left;}"
+    "th{background:#f0f4f8;}"
+    "hr{border:none;border-top:1px solid #ddd;}"
+    "@page{size:A4;margin:2cm;}"
+    ".page-break{page-break-before:always;}"
+    "</style>"
+)
+
+
+def _documento_pdf(cuerpo):
+    """Envuelve el cuerpo ya saneado en un documento con la hoja de impresión."""
+    return f"<html><head>{CSS_IMPRESION}</head><body>{cuerpo}</body></html>"
+
+
+@st.cache_data(show_spinner="Generando el PDF…", max_entries=4)
+def _construir_pdf(html_raw):
+    """Convierte el workbook a PDF y devuelve (bytes, mensaje de error).
+
+    Se sanea ANTES de convertir, igual que la vista previa, por dos motivos:
+
+    * xhtml2pdf resuelve las referencias `url(...)` del CSS y puede llegar a
+      descargar recursos remotos desde el servidor (SSRF) a partir de HTML
+      generado por el modelo.
+    * su parser de CSS lanza CSSParseError con entradas hostiles, así que el
+      PDF fallaba directamente.
+
+    Además, el código anterior no miraba el valor de retorno de CreatePDF: si
+    fallaba, se ofrecía un PDF roto sin ningún aviso.
+
+    Se cachea porque xhtml2pdf es lento y bloqueante y el HTML solo cambia al
+    regenerar el workbook.
+    """
+    cuerpo = limpiar_html(html_raw)
+    if not cuerpo.strip():
+        return None, "el HTML quedó vacío tras el saneado de seguridad."
+    buffer = io.BytesIO()
+    try:
+        resultado = pisa.CreatePDF(io.StringIO(_documento_pdf(cuerpo)), dest=buffer)
+    except Exception as e:  # xhtml2pdf puede lanzar con HTML degenerado
+        return None, f"{type(e).__name__}: {e}"
+    if resultado.err:
+        return None, f"xhtml2pdf reportó {resultado.err} error(es) al maquetar el HTML."
+    pdf = buffer.getvalue()
+    if not pdf:
+        return None, "el PDF resultante está vacío."
+    return pdf, ""
+
+
+def _mostrar_workbook(html_raw):
+    """Renderiza el workbook saneado, avisando si el saneado lo dejó vacío."""
+    limpio = limpiar_html(html_raw)
+    if limpio.strip():
+        st.markdown(f'<div class="workbook-preview">{limpio}</div>',
+                    unsafe_allow_html=True)
+    else:
+        st.warning("La vista previa quedó vacía tras el saneado de seguridad: "
+                   "el HTML generado solo contenía etiquetas descartadas.",
+                   icon=":material/gpp_maybe:")
+
 
 # ═══════════════════════════════════════════════════════════════
 # ESTADO DE SESIÓN
@@ -427,31 +517,27 @@ INSTRUCCIÓN: {instruccion_final}"""})
     # ═══════════════════════════════════════════════════════════════
     if st.session_state['producto_html']:
         if st.session_state['producto_audit']:
-            with st.expander(" Auditoría Ingenieril (Quality Gates, DQS y decisiones)", expanded=False):
+            with st.expander("Auditoría ingenieril (quality gates, DQS y decisiones)",
+                             expanded=False, icon=":material/fact_check:"):
                 st.markdown(st.session_state['producto_audit'])
-        st.markdown("### 📄 Vista Previa del Workbook:")
-        st.markdown(st.session_state['producto_html'], unsafe_allow_html=True)
+
+        st.subheader("Vista previa del workbook", icon=":material/description:")
+        _mostrar_workbook(st.session_state['producto_html'])
 
         c5, c6 = st.columns(2)
         with c5:
-            if st.button("📥 Descargar PDF del Producto", use_container_width=True):
-                html_raw = st.session_state['producto_html']
-                if "<html" in html_raw.lower():
-                    full_html = html_raw
-                else:
-                    css = ("<style>body{font-family:Helvetica;color:#222;padding:40px;line-height:1.5;}"
-                           "h1{color:#004466;border-bottom:3px solid #004466;padding-bottom:10px;}"
-                           "h2{color:#006699;margin-top:25px;} table{width:100%;border-collapse:collapse;margin:15px 0;}"
-                           "th,td{border:1px solid #ccc;padding:10px;text-align:left;} th{background:#f0f4f8;}</style>")
-                    full_html = f"<html><head>{css}</head><body>{html_raw}</body></html>"
-                buffer = io.BytesIO()
-                pisa.CreatePDF(io.StringIO(full_html), dest=buffer)
-                buffer.seek(0)
-                st.download_button("⬇️ Guardar PDF Ahora", data=buffer,
-                                   file_name="producto_alto_valor.pdf", mime="application/pdf")
+            pdf, error_pdf = _construir_pdf(st.session_state['producto_html'])
+            if pdf:
+                st.download_button("Descargar PDF del producto", data=pdf,
+                                   file_name="producto_alto_valor.pdf",
+                                   mime="application/pdf", width="stretch",
+                                   icon=":material/picture_as_pdf:")
+            else:
+                st.error(f"No se pudo generar el PDF: {error_pdf}",
+                         icon=":material/error:")
         with c6:
             if st.session_state['producto_roadmap']:
-                st.markdown("### 🗂️ Roadmap de Carpetas y Creación con IA")
+                st.subheader("Roadmap de carpetas", icon=":material/folder_open:")
                 st.markdown(st.session_state['producto_roadmap'])
 
         if st.session_state['modo_seleccionado'] == 'completo':
