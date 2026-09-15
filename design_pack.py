@@ -1,12 +1,12 @@
 import observability as obs
 import streamlit as st
-import streamlit.components.v1 as components
-import anthropic
 import base64
 import io
 import re
 import urllib.parse
 from pypdf import PdfReader
+
+from parsing import extraer_seccion
 
 PLATFORMS = {
     "Canva (Magic Design)": "https://www.canva.com/",
@@ -35,33 +35,12 @@ SALIDA EXACTA con estos separadores:
 (prompt en inglés, máx 60 palabras, para generar portada/mockup: estilo, colores dominantes, composición, iluminación; indica 'no text' salvo el título del producto)"""
 
 
-def _one_click_button(label, prompt_text, url):
-    seguro = prompt_text.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
-    html = f"""
-<button id="ocbtn" style="width:100%;padding:12px;border:none;border-radius:8px;
-background:linear-gradient(90deg,#00d4ff,#0099cc);color:#fff;font-weight:600;cursor:pointer;font-size:14px;">
-{label}</button>
-<script>
-document.getElementById('ocbtn').onclick = async function() {{
-  var texto = `{seguro}`;
-  try {{ await navigator.clipboard.writeText(texto); }}
-  catch(e) {{
-    var ta = document.createElement('textarea');
-    ta.value = texto; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-  }}
-  window.open('{url}', '_blank');
-  this.innerText = '✅ Prompt copiado — pégalo en la plataforma con Ctrl+V';
-}};
-</script>"""
-    components.html(html, height=52)
-
-
 def render(api_key, model_id, producto_html=None):
     st.markdown('<div class="phase-container">', unsafe_allow_html=True)
-    st.subheader("🎨 Design Pack — Prompts listos para Canva, Gamma y más")
+    st.subheader("Design Pack — prompts para Canva, Gamma y más",
+                 icon=":material/palette:")
 
-    if st.button("⬅️ Volver al menú", key="v3"):
+    if st.button("Volver al menú", key="v3", icon=":material/arrow_back:"):
         st.session_state['modo_seleccionado'] = None
         st.rerun()
 
@@ -78,7 +57,8 @@ def render(api_key, model_id, producto_html=None):
     )
 
     if producto_html:
-        st.info("✅ Usando el producto modelado en Fase 1 como base.")
+        st.info("Usando el producto modelado en Fase 1 como base.",
+                icon=":material/check_circle:")
         base = producto_html
     else:
         base = st.text_area(
@@ -89,13 +69,15 @@ def render(api_key, model_id, producto_html=None):
     # Inyectar DESIGN_FEED del ICAI si existe
     feed3 = st.session_state.get('icai_design_feed', '')
     if feed3:
-        st.info("🧠 Inteligencia ICAI conectada: el Design Pack usará el DESIGN_FEED (tono, estilo, emoción por segmento).")
+        st.info("Inteligencia ICAI conectada: el Design Pack usará el DESIGN_FEED "
+                "(tono, estilo, emoción por segmento).", icon=":material/psychology:")
 
-    if st.button("🎨 Generar Design Pack", type="primary", use_container_width=True):
+    if st.button("Generar Design Pack", type="primary", width="stretch",
+                 icon=":material/palette:"):
         if not api_key:
-            st.error("⚠️ Falta la API Key en la barra lateral")
+            st.error("Falta la API Key en la barra lateral", icon=":material/key_off:")
         else:
-            with st.spinner("🎨 Analizando estilo de referencias y generando prompts por plataforma..."):
+            with st.spinner("Analizando el estilo de las referencias y generando los prompts…"):
                 contenido = []
                 # Procesar archivos de estilo
                 for f in (style_files or []):
@@ -116,7 +98,8 @@ def render(api_key, model_id, producto_html=None):
                                 "text": f"TEXTO DEL PDF DE ESTILO ({f.name}):\n{txt[:6000]}"
                             })
                         except Exception:
-                            st.warning(f"⚠️ PDF no legible: {f.name}")
+                            st.warning(f"PDF no legible: {f.name}",
+                                       icon=":material/warning:")
                 # Contenido base del producto
                 base_limpia = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', base or ""))[:6000]
                 contenido.append({
@@ -135,7 +118,7 @@ Genera los 4 bloques con sus separadores exactos."""
                         "text": f"=== INTELIGENCIA ICAI (DESIGN_FEED) ===\n{feed3}"
                     })
                 try:
-                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), model_id)
+                    client = obs.cliente_observado(api_key, model_id)
                     resp = client.messages.create(
                         model=model_id,
                         max_tokens=4000,
@@ -143,54 +126,52 @@ Genera los 4 bloques con sus separadores exactos."""
                         messages=[{"role": "user", "content": contenido}]
                     )
                     st.session_state['design_pack'] = resp.content[0].text
-                    st.success("✅ Design Pack generado!")
+                    st.success("Design Pack generado.", icon=":material/check_circle:")
                     st.caption(obs.last_line())
                 except Exception as e:
-                    st.error(f"❌ Error: {e}")
+                    st.error(f"Error: {e}", icon=":material/error:")
 
     # Mostrar resultados
     if st.session_state.get('design_pack'):
         out = st.session_state['design_pack']
+        marcadores = ["=== STYLE ===", "=== CANVA ===", "=== GAMMA ===", "=== BING ==="]
+        style, canva, gamma, bing = (extraer_seccion(out, m, marcadores) for m in marcadores)
 
-        def bloque(marker):
-            if marker not in out:
-                return ""
-            tail = out.split(marker, 1)[1]
-            for m in ["=== STYLE ===", "=== CANVA ===", "=== GAMMA ===", "=== BING ==="]:
-                tail = tail.split(m)[0]
-            return tail.strip()
-
-        style, canva, gamma, bing = (bloque(m) for m in
-            ["=== STYLE ===", "=== CANVA ===", "=== GAMMA ===", "=== BING ==="])
-
-        st.markdown("### 🧬 Guía de estilo detectada")
+        st.subheader("Guía de estilo detectada", icon=":material/palette:")
         st.markdown(style or "(sin guía de estilo)")
 
-        st.markdown("### 🖌️ CANVA — Magic Design")
+        # Se usan elementos nativos: st.code ya trae su propio botón de copiar
+        # y st.link_button abre la plataforma. Antes esto era un <button> con
+        # JavaScript inyectado vía st.components.v1.html (obsoleto), donde
+        # TODOS los botones compartían id="ocbtn": al pasar a HTML inline en
+        # lugar de iframes separados, todos habrían copiado el prompt de Canva.
+        st.subheader("Canva — Magic Design", icon=":material/brush:")
         st.code(canva, language=None)
-        _one_click_button(" Copiar prompt y abrir Canva (1 clic)", canva, PLATFORMS["Canva (Magic Design)"])
+        st.link_button("Abrir Canva", PLATFORMS["Canva (Magic Design)"],
+                       width="stretch", icon=":material/open_in_new:")
         st.caption("Dentro de Canva: nuevo diseño → Magic Design → pega con Ctrl+V.")
 
-        st.markdown("###  GAMMA — Docs / Presentaciones")
+        st.subheader("Gamma — Docs / presentaciones", icon=":material/slideshow:")
         st.code(gamma, language=None)
-        _one_click_button("📋 Copiar prompt y abrir Gamma (1 clic)", gamma, PLATFORMS["Gamma (Docs y Presentaciones)"])
+        st.link_button("Abrir Gamma", PLATFORMS["Gamma (Docs y Presentaciones)"],
+                       width="stretch", icon=":material/open_in_new:")
 
-        st.markdown("### ️ BING IMAGE CREATOR — Portada / Mockup")
-        st.caption("Único enlace que lleva el prompt YA escrito dentro:")
-        st.link_button(
-            "🔗 Abrir Bing con el prompt cargado",
-            "https://www.bing.com/images/create?q=" + urllib.parse.quote(bing),
-            use_container_width=True
-        )
+        st.subheader("Bing Image Creator — Portada / mockup", icon=":material/image:")
+        st.caption("Este enlace es el único que lleva el prompt ya escrito dentro.")
+        st.link_button("Abrir Bing con el prompt cargado",
+                       "https://www.bing.com/images/create?q=" + urllib.parse.quote(bing),
+                       width="stretch", icon=":material/open_in_new:")
         st.code(bing, language=None)
 
-        st.markdown("### 🧰 Otras plataformas")
+        st.subheader("Otras plataformas", icon=":material/extension:")
         otras = st.multiselect(
             "Elige plataformas extra",
             [p for p in PLATFORMS if p not in ("Canva (Magic Design)", "Gamma (Docs y Presentaciones)")]
         )
         for p in otras:
             st.markdown(f"**{p}**")
-            _one_click_button(f" Copiar brief y abrir {p}", canva, PLATFORMS[p])
+            st.code(canva, language=None)
+            st.link_button(f"Abrir {p}", PLATFORMS[p],
+                           width="stretch", icon=":material/open_in_new:")
 
     st.markdown('</div>', unsafe_allow_html=True)

@@ -1,10 +1,10 @@
 import observability as obs
 import streamlit as st
-import anthropic
 import base64
 import io
-import json
 from pypdf import PdfReader
+
+from parsing import extraer_json, extraer_seccion
 
 SECCIONES = [
     "=== DOSSIER ===", "=== SEARCH ===", "=== EVALUATION ===", "=== DECISION ===",
@@ -84,7 +84,7 @@ def _procesar(files, etiqueta):
                 txt = "\n".join([p.extract_text() or "" for p in PdfReader(io.BytesIO(f.read())).pages])
                 texto += f"\n--- {etiqueta} | {f.name} ---\n{txt[:12000]}\n"
             except Exception:
-                st.warning(f"⚠️ PDF no legible: {f.name}")
+                st.warning(f"PDF no legible: {f.name}", icon=":material/warning:")
         elif f.type in ["image/png", "image/jpeg"]:
             bloques.append({"type": "text", "text": f"[IMAGEN — {etiqueta}: {f.name}]"})
             bloques.append({"type": "image", "source": {"type": "base64",
@@ -92,21 +92,13 @@ def _procesar(files, etiqueta):
     return texto, bloques
 
 
-def _seccion(out, marker):
-    if marker not in out:
-        return ""
-    tail = out.split(marker, 1)[1]
-    for m in SECCIONES:
-        tail = tail.split(m)[0]
-    return tail.strip()
-
-
 def render(api_key, model_id):
     st.markdown('<div class="phase-container">', unsafe_allow_html=True)
-    st.subheader("🧭 PASO 0: ICAI V1.2 DEEP — Inteligencia de Cliente completa")
+    st.subheader("Paso 0: ICAI V1.2 DEEP — inteligencia de cliente completa",
+                 icon=":material/explore:")
     st.markdown("Modela al cliente y su decisión: descubrimiento, evaluación, elección, mensaje, funnel y lifecycle.")
 
-    if st.button("⬅️ Volver al menú", key="v5"):
+    if st.button("Volver al menú", key="v5", icon=":material/arrow_back:"):
         st.session_state['modo_seleccionado'] = None
         st.rerun()
 
@@ -118,15 +110,17 @@ def render(api_key, model_id):
                                 type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key="icai_ev")
     ev_text = st.text_area("O pega aquí evidencia textual", height=100)
 
-    if st.button("🧭 Ejecutar ICAI DEEP (Dossier + 6 capas + Puentes)", type="primary", use_container_width=True):
+    if st.button("Ejecutar ICAI DEEP (dossier + 6 capas + puentes)", type="primary",
+                 width="stretch", icon=":material/explore:"):
         if not api_key:
-            st.error("⚠️ Introduce tu API Key en la barra lateral")
+            st.error("Introduce tu API Key en la barra lateral", icon=":material/key_off:")
         elif not niche.strip():
-            st.error("⚠️ El NICHE es obligatorio.")
+            st.error("El NICHE es obligatorio.", icon=":material/warning:")
         elif not prod_files and not prod_desc.strip():
-            st.error("⚠️ Falta el PRODUCTO: sube archivos o descríbelo.")
+            st.error("Falta el PRODUCTO: sube archivos o descríbelo.",
+                     icon=":material/warning:")
         else:
-            with st.spinner("🧠 Modelando cliente: estado → decisión → descubrimiento → conversión → lifecycle..."):
+            with st.spinner("Modelando el cliente: estado → decisión → descubrimiento → conversión → lifecycle…"):
                 contenido = []
                 pt, pb = _procesar(prod_files, "PRODUCTO")
                 et, eb = _procesar(ev_files, "EVIDENCIA DE CLIENTE")
@@ -139,9 +133,9 @@ def render(api_key, model_id):
                 contenido.append({"type": "text", "text":
                     "Ejecuta el proceso completo y entrega todas las secciones con sus separadores exactos."})
                 try:
-                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), model_id)
+                    client = obs.cliente_observado(api_key, model_id)
 
-                    st.markdown("##### ✍️ Generando en vivo (texto en bruto; el dossier bonito aparece abajo al terminar):")
+                    st.markdown("##### Generando en vivo (texto en bruto; el dossier aparece abajo al terminar)")
                     with client.messages.stream(
                         model=model_id, max_tokens=20000,
                         system=ICAI_SYSTEM,
@@ -161,16 +155,24 @@ def render(api_key, model_id):
                     # Claude continúe directamente en formato JSON).
                     raw_output = "{" + raw_text
 
-                    try:
-                        datos = json.loads(raw_output)
-                        secciones = {marker: (datos.get(clave) or "").strip() for marker, clave in JSON_KEYS.items()}
-                        out = "\n\n".join(f"{marker}\n{secciones[marker]}" for marker in SECCIONES if secciones[marker])
-                    except json.JSONDecodeError:
-                        # PLAN B: si el JSON viniera mal formado, probamos el formato
-                        # antiguo de separadores de texto como respaldo, para no
-                        # perder el resultado si algo raro pasa.
+                    datos = extraer_json(raw_output)
+                    if datos is None:
+                        # Rescate de último recurso: el prompt exige JSON puro,
+                        # pero si el modelo ignoró el contrato y respondió con
+                        # los separadores de texto, aún se puede aprovechar.
+                        st.warning("No se pudo interpretar la respuesta como JSON. "
+                                   "Se muestran los separadores de texto si existen.",
+                                   icon=":material/warning:")
+                        with st.expander("Ver respuesta en bruto", icon=":material/build:"):
+                            st.code(raw_output[:5000])
+                        secciones = {m: extraer_seccion(raw_output, m, SECCIONES)
+                                     for m in SECCIONES}
                         out = raw_output
-                        secciones = {m: _seccion(out, m) for m in SECCIONES}
+                    else:
+                        secciones = {marker: (datos.get(clave) or "").strip()
+                                     for marker, clave in JSON_KEYS.items()}
+                        out = "\n\n".join(f"{marker}\n{secciones[marker]}"
+                                          for marker in SECCIONES if secciones[marker])
 
                     st.session_state['icai_dossier'] = out
                     st.session_state['icai_sections'] = secciones
@@ -182,57 +184,67 @@ def render(api_key, model_id):
                     st.session_state['icai_ready'] = True  # Flag para confirmar que ICAI está listo
 
                     if not secciones.get("=== OFFER_FEED ==="):
-                        st.warning("⚠️ No se pudo extraer el OFFER_FEED de la respuesta. Revisa el resultado en bruto antes de pasar a la Fase 1.")
-                        with st.expander("🔧 Ver respuesta en bruto (para depurar)"):
+                        st.warning("No se pudo extraer el OFFER_FEED de la respuesta. "
+                                   "Revisa el resultado en bruto antes de pasar a la Fase 1.",
+                                   icon=":material/warning:")
+                        with st.expander("Ver respuesta en bruto", icon=":material/build:"):
                             st.code(raw_output[:5000])
                     else:
-                        st.success("✅ ICAI DEEP completado: dossier + 6 capas + puentes conectados.")
+                        st.success("ICAI DEEP completado: dossier + 6 capas + puentes conectados.",
+                                   icon=":material/check_circle:")
                     st.caption(obs.last_line())
                 except Exception as e:
-                    st.error(f"❌ Error: {str(e)}")
+                    st.error(f"Error: {str(e)}", icon=":material/error:")
 
     if st.session_state.get('icai_sections'):
         secs = st.session_state['icai_sections']
-        nombres = {
-            "=== DOSSIER ===": "📋 Customer Dossier (segmentos, dolores, ángulos, promesas)",
-            "=== SEARCH ===": "🔍 Search & Discovery (.15)",
-            "=== EVALUATION ===": "⚖️ Evaluation & Alternatives incl. status quo (.16)",
-            "=== DECISION ===": "🎯 Choice & Decision: blockers y levers (.17)",
-            "=== MESSAGE ===": "💬 Message & Persuasion por awareness (.18)",
-            "=== FUNNEL ===": "🌀 Funnel como estados + experimentos (.19–.20)",
-            "=== LIFECYCLE ===": "♻️ Lifecycle: activación, quick win, reembolso, upsell (.21)",
-            "=== OFFER_FEED ===": "🔌 OFFER_FEED → Offer Engine",
-            "=== SPCE_FEED ===": "🔌 SPCE_FEED → Landing",
-            "=== DESIGN_FEED ===": "🔌 DESIGN_FEED → Design Pack",
+        # (título, icono Material) por sección
+        SECCIONES_UI = {
+            "=== DOSSIER ===": ("Customer dossier: segmentos, dolores, ángulos y promesas", ":material/badge:"),
+            "=== SEARCH ===": ("Search & discovery (.15)", ":material/search:"),
+            "=== EVALUATION ===": ("Evaluation & alternatives, incl. status quo (.16)", ":material/balance:"),
+            "=== DECISION ===": ("Choice & decision: blockers y levers (.17)", ":material/target:"),
+            "=== MESSAGE ===": ("Message & persuasion por awareness (.18)", ":material/chat:"),
+            "=== FUNNEL ===": ("Funnel como estados + experimentos (.19–.20)", ":material/filter_alt:"),
+            "=== LIFECYCLE ===": ("Lifecycle: activación, quick win, reembolso, upsell (.21)", ":material/autorenew:"),
+            "=== OFFER_FEED ===": ("OFFER_FEED → Offer Engine", ":material/power:"),
+            "=== SPCE_FEED ===": ("SPCE_FEED → Landing", ":material/power:"),
+            "=== DESIGN_FEED ===": ("DESIGN_FEED → Design Pack", ":material/power:"),
         }
         for m in SECCIONES:
             if secs.get(m):
-                with st.expander(nombres[m], expanded=(m in ("=== OFFER_FEED ===", "=== SPCE_FEED ==="))):
+                titulo, icono = SECCIONES_UI[m]
+                with st.expander(titulo, icon=icono,
+                                 expanded=(m in ("=== OFFER_FEED ===", "=== SPCE_FEED ==="))):
                     st.markdown(secs[m])
-        st.download_button("📥 Descargar dossier DEEP completo", data=st.session_state['icai_dossier'],
-                           file_name="icai_dossier_deep.md", mime="text/markdown")
-        st.info("✅ Puentes conectados: la Fase 1, la Fase 2 y el Design Pack usarán esta inteligencia automáticamente.")
+        st.download_button("Descargar dossier DEEP completo", data=st.session_state['icai_dossier'],
+                           file_name="icai_dossier_deep.md", mime="text/markdown",
+                           width="stretch", icon=":material/download:")
+        st.info("Puentes conectados: la Fase 1, la Fase 2 y el Design Pack usarán esta "
+                "inteligencia automáticamente.", icon=":material/check_circle:")
 
         # ── Botones de transición ─
-        st.markdown("---")
-        st.subheader("🚀 ¿Qué quieres hacer ahora?")
+        st.divider()
+        st.subheader("¿Qué quieres hacer ahora?", icon=":material/rocket_launch:")
         st.markdown("La inteligencia de cliente ya está conectada. Puedes usarla para:")
 
-        # Debug visual: mostrar que los feeds están listos
         offer_len = len(st.session_state.get('icai_offer_feed', ''))
-        st.caption(f"📊 OFFER_FEED listo: {offer_len} caracteres | SPCE_FEED: {len(st.session_state.get('icai_spce_feed', ''))} chars | DESIGN_FEED: {len(st.session_state.get('icai_design_feed', ''))} chars")
+        st.caption(f"OFFER_FEED listo: {offer_len} caracteres | "
+                   f"SPCE_FEED: {len(st.session_state.get('icai_spce_feed', ''))} | "
+                   f"DESIGN_FEED: {len(st.session_state.get('icai_design_feed', ''))}")
 
         tc1, tc2, tc3 = st.columns(3)
         with tc1:
-            if st.button("📦 Modelar Producto (Fase 1)", use_container_width=True, type="primary"):
+            if st.button("Modelar producto (fase 1)", width="stretch", type="primary",
+                         icon=":material/inventory_2:"):
                 st.session_state['modo_seleccionado'] = 'producto'
                 st.rerun()
         with tc2:
-            if st.button("🎨 Design Pack", use_container_width=True):
+            if st.button("Design Pack", width="stretch", icon=":material/palette:"):
                 st.session_state['modo_seleccionado'] = 'design'
                 st.rerun()
         with tc3:
-            if st.button("🧭 Volver al menú", use_container_width=True):
+            if st.button("Volver al menú", width="stretch", icon=":material/home:"):
                 st.session_state['modo_seleccionado'] = None
                 st.rerun()
 
