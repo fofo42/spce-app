@@ -54,7 +54,7 @@ def procesar_archivos(files, etiqueta):
                 "media_type": f.type, "data": base64.b64encode(f.read()).decode()}})
     return texto, bloques
 
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 # TEMA OSCURO
 # ═══════════════════════════════════════════════════════════════
 st.set_page_config(page_title="Ecosistema Unificado", page_icon="🧠", layout="wide")
@@ -132,52 +132,97 @@ for k, v in {"modo_seleccionado": None, "producto_html": None,
         st.session_state[k] = v
 
 # ═══════════════════════════════════════════════════════════════
-# PROMPTS MAESTROS
+# PROMPTS MAESTROS — CEREBRO PROFUNDO V1.0.1 (12 módulos condensados)
 # ═══════════════════════════════════════════════════════════════
-OFFER_SYSTEM = """Eres el OFFER MODELING & ENGINEERING ENGINE V1.0.1 (motor completo).
+OFFER_SYSTEM = """Eres el OFFER MODELING & ENGINEERING ENGINE V1.0.1 — sistema completo de 12 módulos.
 
-DISTINCIÓN DE INPUTS:
-- REFERENCIA DE ESTILO: solo para extraer estilo, patrones y técnicas. NUNCA copies su contenido.
-- PRODUCTO BASE: contenido real que debes remodelar y superar.
-- INTELIGENCIA ICAI (si existe): contexto prioritario de cliente (segmentos, dolores, lenguaje, objeciones, triggers).
-
+=== V1.0.1.00 SYSTEM CONTRACT ===
 INVARIANTES (SIEMPRE ACTIVOS):
 INV-01 NO INVENTION: nunca inventes resultados, testimonios, credenciales, estudios, garantías, precios ni datos.
 INV-02 TRANSFORMATION FIRST: la oferta se construye alrededor de la transformación, no del volumen de contenido.
-INV-03 EVIDENCE ≠ INFERENCE: separa siempre evidencia, inferencia e hipótesis.
-INV-04 UNKNOWN IS VALID: si falta información, UNKNOWN es preferible a inventar.
-INV-05 PRACTICALITY > CONTENT VOLUME: prioriza CHECKLIST, WORKSHEET, TRACKER, TEMPLATE, SCORECARD, DECISION TOOL, PROTOCOL, ROUTINE, QUICK REFERENCE. GUIDE solo como último recurso justificado.
-INV-06 BEGINNER-FIRST: comprensible sin conocimientos previos, sin jerga.
-INV-07 PRINTABILITY: espacios de escritura, casillas, tablas, campos, instrucciones cortas.
-INV-08 REDUNDANCY CONTROL: dos entregables que resuelven el mismo problema → MERGE o REMOVE.
-INV-09 CORE ≠ BONUS: si un componente es necesario para la transformación, es CORE, nunca bonus decorativo.
+INV-03 EVIDENCE ≠ INFERENCE ≠ HYPOTHESIS: separa siempre. Si falta información: UNKNOWN.
+INV-04 PRACTICALITY > CONTENT VOLUME: prioriza CHECKLIST, WORKSHEET, TRACKER, TEMPLATE, SCORECARD, DECISION TOOL, PROTOCOL, ROUTINE, QUICK REFERENCE. GUIDE solo como último recurso justificado.
+INV-05 BEGINNER-FIRST: comprensible sin conocimientos previos, sin jerga.
+INV-06 PRINTABILITY: espacios de escritura, casillas &#9744;, tablas, campos, instrucciones cortas.
+INV-07 REDUNDANCY CONTROL: dos entregables que resuelven el mismo problema → MERGE o REMOVE.
+INV-08 CORE ≠ BONUS: si un componente es necesario para la transformación, es CORE, nunca bonus decorativo.
+INV-09 BONUS RULE: todo bonus debe resolver un problema secundario, acelerar resultado, prevenir error o aumentar implementación. Si no: REJECT.
+INV-10 ANTI-FILLER: nunca añadas activos solo para aumentar cantidad. 5 útiles > 30 genéricos.
+INV-11 VALUE DENSITY: maximiza PRACTICAL_VALUE / USER_EFFORT.
+INV-12 OFFER EFFICIENCY: TRANSFORMATION_COVERAGE / DELIVERABLE_COMPLEXITY.
+INV-13 TRACEABILITY: todo entregable debe responder "¿Qué problema resuelve? ¿Qué pilar cubre? ¿Por qué este formato?".
+INV-14 CLAIM CONTROL: toda afirmación sobre resultados/autoridad debe rastrearse o marcarse HYPOTHESIS.
+INV-15 MODELING ≠ COPYING: modela la lógica, nunca copies nombres/textos/branding/testimonios.
 
-LOS 6 PILARES OBLIGATORIOS (cada uno produce INSIGHT → NEED → SOLUTION → DELIVERABLE):
-P01 TRANSFORMATION DIFFICULTY | P02 SPEED TO RESULT | P03 PROCESS SUPPORT
-P04 FUTURE PROBLEM PREVENTION | P05 BLIND SPOTS | P06 PROCESS MEASUREMENT
+=== V1.0.1.01 SKILL MASTER ===
+Modo de pensar: CUSTOMER → DESIRED TRANSFORMATION → OBSTACLES → NEEDS → SOLUTIONS → DELIVERABLES → OFFER.
+Nunca razonar desde "¿Qué PDF añadimos?". Siempre desde "¿Qué obstáculo sigue sin resolverse?".
+Unidades: TRANSFORMATION (análisis), DELIVERABLE (ingeniería), OFFER ARCHITECTURE (output).
 
-SELECCIÓN DE FORMATO (IF/THEN):
-comprobar→CHECKLIST | completar→WORKSHEET | registrar→TRACKER/LOG | reutilizar→TEMPLATE |
-medir→SCORECARD | diagnosticar→DIAGNOSTIC | decidir→DECISION TOOL | ejecutar→PROTOCOL/ACTION PLAN |
-practicar→EXERCISE | consultar rápido→QUICK REFERENCE | calcular→CALCULATOR | rutinizar→ROUTINE |
-comprender antes de actuar→GUIDE (último recurso).
+=== V1.0.1.02 DEFINITIVE SCHEMAS ===
+Schema canónico de entregable (11 campos):
+ID | Nombre | Pilar (P01-P06) | Problema resuelto | Obstáculo eliminado | Etapa de transformación | Formato (D01-D15) | Target user (BEGINNER/INTERMEDIATE/ADVANCED) | Cuándo se usa | Cómo se usa | Resultado esperado
+Formatos canónicos: D01 CHECKLIST | D02 WORKSHEET | D03 TRACKER | D04 TEMPLATE | D05 SCORECARD | D06 QUICK REFERENCE | D07 DECISION TOOL | D08 ACTION PLAN | D09 EXERCISE | D10 CALCULATOR | D11 DIAGNOSTIC | D12 ROUTINE | D13 PROTOCOL | D14 LOG | D15 GUIDE (último recurso).
 
-QUALITY GATES POR ENTREGABLE (DQS 0-100):
-DQS = 0.20×Problem Relevance + 0.20×Transformation Impact + 0.15×Practicality + 0.15×Ease of Use + 0.10×Printability + 0.10×Perceived Value + 0.10×Complementarity
-DECISIONES: ≥85 ACCEPT | 70-84 ACCEPT_WITH_IMPROVEMENT | 55-69 IMPROVE | 40-54 SIMPLIFY/REDESIGN | <40 REJECT.
-HARD GATES: no accionable → REJECT | sin relevancia de transformación → REJECT | redundante → MERGE | demasiado complejo para el avatar → SIMPLIFY | no imprimible siendo práctico → REWORK.
+=== V1.0.1.03 STATE MACHINE (9 pasos obligatorios) ===
+S01 EXTRAER producto base (qué vende, a quién, qué promete, qué mecanismo usa).
+S02 TRANSFORMATION MAP: CURRENT STATE → STAGES → DESIRED STATE (con criterios de éxito).
+S03 CLIENTE Y OBSTÁCULOS: avatar real + obstáculos por categoría (knowledge/skill/decision/action/consistency/motivation/time/resources/confusion/fear/error/measurement/maintenance).
+S04 SEIS PILARES: P01 Dificultad | P02 Velocidad | P03 Acompañamiento | P04 Prevención futura | P05 Puntos ciegos | P06 Medición.
+S05 GAP ANALYSIS: PROMESA vs REQUISITOS REALES y ENTREGABLES EXISTENTES vs NECESIDADES. Prioridad = IMPACTO × FRECUENCIA × URGENCIA × RIESGO.
+S06 ENGINEERING DE ENTREGABLES: GAP → ROOT PROBLEM → NEED → SOLUTION → FORMAT (IF/THEN) → DELIVERABLE.
+S07 EVALUACIÓN DQS + GATES: cada entregable recibe DQS y pasa gates.
+S08 ARQUITECTURA: CORE → SUPPORT → MEASUREMENT → PREVENTION → BONUSES.
+S09 VALIDACIÓN FINAL: ¿Cubre transformación? ¿6 pilares? ¿Gaps críticos resueltos? ¿Práctico? ¿Simple? ¿Trazable?
 
-PROCESO INTERNO OBLIGATORIO (no omitas pasos):
-1 Extraer producto base. 2 Transformation Map (current → stages → desired). 3 Cliente y obstáculos.
-4 Seis pilares. 5 Gap analysis (prioridad = impacto × frecuencia × urgencia × riesgo). 6 Engineering de entregables.
-7 Evaluación DQS + gates. 8 Arquitectura (CORE → SUPPORT → MEASUREMENT → PREVENTION → BONUSES). 9 Validación final.
+=== V1.0.1.04–.05 TOOL CAPABILITY + ADAPTER ===
+Tool-agnostic. No asumas herramienta concreta. Identifica CAPABILITY → ACTION → TOOL.
+AI CREATION LAYER: para cada entregable indica qué crear con Claude (texto/estructura), qué con Gamma (visual/guía), qué con hoja de cálculo (tracker/calculator), qué con código (calculator avanzado).
 
-SALIDA EXACTA EN 3 BLOQUES CON ESTOS SEPARADORES:
+=== V1.0.1.06 I/O CONTRACTS ===
+Input: NICHE + PRODUCT (obligatorios) + REFERENCIA ESTILO (opcional) + INTELIGENCIA ICAI (opcional).
+Output: 3 bloques con separadores exactos (ver abajo).
+Epistémico: I0 UNKNOWN | I1 USER_PROVIDED | I2 DOCUMENTED | I3 EXTERNALLY_VERIFIED | I4 SYSTEM_DERIVED | I5 HYPOTHESIS.
+
+=== V1.0.1.07 QUALITY GATES ===
+DQS = 0.20×Problem_Relevance + 0.20×Transformation_Impact + 0.15×Practicality + 0.15×Ease_of_Use + 0.10×Printability + 0.10×Perceived_Value + 0.10×Complementarity
+Escala 0-100. Decisiones:
+≥85 → ACCEPT | 70-84 → ACCEPT_WITH_IMPROVEMENT | 55-69 → IMPROVE | 40-54 → SIMPLIFY/REDESIGN | <40 → REJECT
+HARD GATES (bloquean aceptación): no accionable → REJECT | sin relevancia de transformación → REJECT | redundante → MERGE | demasiado complejo para avatar → SIMPLIFY | no imprimible siendo práctico → REWORK | guía cuando existe formato práctico → REFORMAT.
+BEGINNER GATE: ¿puede entenderlo, iniciarlo, completarlo y verificar resultado un principiante?
+REDUNDANCY GATE: mismo propósito + mismo problema + misma acción → MERGE.
+
+=== V1.0.1.08 ERROR & RECOVERY ===
+Si un entregable falla gate: REWORK local (no reiniciar todo). Si falta información crítica: marcar UNKNOWN y continuar con confianza reducida. Si conflicto de fuentes: preservar ambos y marcar CONFLICT.
+
+=== V1.0.1.09 PROJECT MEMORY ===
+Si detectas patrones de ofertas similares a esta, menciónalos brevemente como "lecciones aplicadas".
+
+=== V1.0.1.10–.12 TEST + AUTONOMY + INTEGRATION ===
+Validación final: ¿Pasaría los 15 invariantes? ¿Trazabilidad completa? ¿Sin claims sin soporte? ¿Bonus realmente no-core?
+
+=== SELECCIÓN DE FORMATO (IF/THEN) ===
+IF necesita comprobar → CHECKLIST | completar → WORKSHEET | registrar → TRACKER/LOG | reutilizar → TEMPLATE | medir → SCORECARD | diagnosticar → DIAGNOSTIC | decidir → DECISION TOOL | ejecutar → PROTOCOL/ACTION PLAN | practicar → EXERCISE | consultar rápido → QUICK REFERENCE | calcular → CALCULATOR | rutinizar → ROUTINE | comprender antes de actuar → GUIDE (último recurso).
+
+=== SALIDA EXACTA EN 3 BLOQUES ===
 === FIN_AUDIT ===
-(AUDITORÍA INGENIERIL breve en español: Transformation Map en 3 líneas; tabla de pilares [Pilar|Insight|Need|Deliverable|Formato]; Deliverable Matrix [ID|Nombre|Formato|Problema que resuelve|DQS|Decisión]; entregables RECHAZADOS o FUSIONADOS con su motivo; UNKNOWNs y warnings.)
+(AUDITORÍA INGENIERIL completa en español:
+1. Transformation Map en 3 líneas: CURRENT → STAGES → DESIRED.
+2. Tabla de 6 pilares: [Pilar | Insight | Need | Deliverable | Formato | DQS | Decisión].
+3. Deliverable Matrix completa: [ID | Nombre | Pilar | Problema | Formato | Target | DQS | Decisión].
+4. Entregables RECHAZADOS con motivo (qué gate falló).
+5. Entregables FUSIONADOS con motivo (qué duplicidad detectaste).
+6. Entregables SIMPLIFICADOS con motivo.
+7. UNKNOWNs explícitos y qué recolectar para resolverlos.
+8. Warnings (claims sin soporte, bonus borderline, etc.).
+9. Lecciones aplicadas de memoria si corresponde.)
 (Después, HTML COMPLETO del WORKBOOK: <html><head><style> para A4 </style></head><body> con portada centrada (nombre + promesa DE→A + qué incluye) y una sección <h1> por pilar con sus entregables APROBADOS: tablas con bordes, casillas &#9744;, espacios de escritura, cajas de consejo/advertencia, saltos class="page-break". Cero relleno.)
 === FIN_DEL_PDF ===
-(ROADMAP: estructura de carpetas OFFER/01_CORE_TRANSFORMATION…07_BONUSES indicando qué entregable va en cada una; qué crear con Claude, qué con Gamma, qué con hoja de cálculo; orden de creación y dependencias; instrucciones de maquetación.)
+(ROADMAP completo:
+1. Estructura de carpetas OFFER/01_CORE_TRANSFORMATION/02_SPEED/03_SUPPORT/04_PREVENTION/05_BLIND_SPOTS/06_MEASUREMENT/07_BONUSES indicando qué entregable va en cada una.
+2. AI CREATION LAYER: qué crear con Claude, qué con Gamma, qué con hoja de cálculo, qué con código.
+3. Orden de creación y dependencias.
+4. Instrucciones de maquetación para el PDF final.)
 No escribas nada fuera de esos 3 bloques."""
 
 SPCE_SYSTEM = """Eres el SALES PAGE CONVERSION ENGINE (SPCE).
@@ -195,7 +240,7 @@ if st.session_state['modo_seleccionado'] is None:
         if st.button("🧭 ICAI (Paso 0)", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'icai'; st.rerun()
     with c2:
-        if st.button("📦 Modelar Producto", use_container_width=True):
+        if st.button(" Modelar Producto", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'producto'; st.rerun()
     with c3:
         if st.button("🚀 Modelar Landing", use_container_width=True):
@@ -204,15 +249,15 @@ if st.session_state['modo_seleccionado'] is None:
         if st.button("🔄 Flujo Completo", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'completo'; st.rerun()
     with c5:
-        if st.button("🎨 Design Pack", use_container_width=True):
+        if st.button(" Design Pack", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'design'; st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("""
-    - **🧭 ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
-    - **📦 Modelar Producto**: Offer Engine V1.0.1: auditoría con DQS + Workbook PDF + Roadmap de carpetas.
-    - **🚀 Modelar Landing**: brief de página de ventas para Lovable.
-    - **🔄 Flujo Completo**: primero el producto; si te convence, pasas a la landing.
-    - **🎨 Design Pack**: prompts listos para Canva/Gamma/Bing con tu estilo visual.
+- **🧭 ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
+- **📦 Modelar Producto**: Offer Engine V1.0.1 con cerebro profundo (12 módulos): auditoría con DQS real + Workbook PDF + Roadmap.
+- **🚀 Modelar Landing**: brief de página de ventas para Lovable.
+- ** Flujo Completo**: primero el producto; si te convence, pasas a la landing.
+- ** Design Pack**: prompts listos para Canva/Gamma/Bing con tu estilo visual.
     """)
     st.stop()
 
@@ -224,18 +269,18 @@ if st.session_state['modo_seleccionado'] == 'icai':
         import icai_engine
         icai_engine.render(api_key, MODEL_ID)
     except Exception as e:
-        st.error(f"⚠️ Módulo ICAI no disponible: {e}")
+        st.error(f"️ Módulo ICAI no disponible: {e}")
         st.markdown("El archivo `icai_engine.py` debe estar junto a `app.py` (y en la raíz del repo).")
         if st.button("⬅️ Volver al menú", key="v7"):
             st.session_state['modo_seleccionado'] = None
             st.rerun()
 
 # ═══════════════════════════════════════════════════════════════
-# FASE 1: MODELAR PRODUCTO (OFFER ENGINE V1.0.1)
+# FASE 1: MODELAR PRODUCTO (OFFER ENGINE V1.0.1 — CEREBRO PROFUNDO)
 # ═══════════════════════════════════════════════════════════════
 if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     st.markdown('<div class="phase-container">', unsafe_allow_html=True)
-    st.subheader("📦 FASE 1: Offer Engine V1.0.1 — Modelar Nuevo Producto")
+    st.subheader("📦 FASE 1: Offer Engine V1.0.1 — Cerebro Profundo (12 módulos)")
 
     if st.button("⬅️ Volver al menú", key="v1"):
         st.session_state.update({'modo_seleccionado': None, 'continuar_landing': False})
@@ -268,13 +313,13 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     with c4:
         transformacion = st.text_input("Transformación deseada", placeholder="Ej: cocinar 2 veces/semana y tener comida para 7 días")
 
-    if st.button("🧠 Ejecutar Motor V1.0.1 (Auditoría + Workbook + Roadmap)", type="primary", use_container_width=True):
+    if st.button("🧠 Ejecutar Motor V1.0.1 Profundo (State Machine + DQS + Quality Gates)", type="primary", use_container_width=True):
         if not api_key:
             st.error("⚠️ Introduce tu API Key en la barra lateral")
         elif not uploaded_producto and not descripcion_producto.strip():
             st.error("⚠️ Falta TU PRODUCTO: sube archivos en el Bloque B o descríbelo.")
         else:
-            with st.spinner("🧠 Ejecutando State Machine: extracción → pilares → gaps → DQS → arquitectura → validación..."):
+            with st.spinner("🧠 Ejecutando State Machine de 9 pasos: extracción → transformación → cliente → obstáculos → 6 pilares → gaps → DQS → arquitectura → validación..."):
                 ref_texto, ref_bloques = procesar_archivos(uploaded_ref, "REFERENCIA DE ESTILO")
                 prod_texto, prod_bloques = procesar_archivos(uploaded_producto, "PRODUCTO A MODELAR")
 
@@ -296,7 +341,7 @@ Descripción adicional: {descripcion_producto or '-'}"""})
                 contenido.append({"type": "text", "text": f"""DATOS DEL PROYECTO:
 TIPO: {tipo_producto} | AVATAR: {avatar} | TRANSFORMACIÓN: {transformacion}
 
-INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloques con separadores exactos."""})
+INSTRUCCIÓN: Ejecuta tu State Machine de 9 pasos completa y entrega los 3 bloques con separadores exactos. Aplica los 15 invariantes, el DQS real, los Quality Gates con umbrales, la Folder Architecture y el AI Creation Layer."""})
 
                 try:
                     client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
@@ -316,14 +361,14 @@ INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloq
                     st.session_state['producto_audit'] = audit.strip()
                     st.session_state['producto_html'] = html_part.strip()
                     st.session_state['producto_roadmap'] = roadmap.strip()
-                    st.success("✅ Motor V1.0.1 completado: auditoría, workbook y roadmap generados.")
+                    st.success("✅ Motor V1.0.1 Profundo completado: auditoría con DQS real, workbook y roadmap generados.")
                     st.caption(obs.last_line())
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
     if st.session_state['producto_html']:
         if st.session_state['producto_audit']:
-            with st.expander("🧾 Auditoría Ingenieril (Quality Gates, DQS y decisiones)", expanded=False):
+            with st.expander("🧾 Auditoría Ingenieril (Quality Gates, DQS, entregables rechazados/fusionados)", expanded=False):
                 st.markdown(st.session_state['producto_audit'])
         st.markdown("### 📄 Vista Previa del Workbook:")
         st.markdown(st.session_state['producto_html'], unsafe_allow_html=True)
@@ -347,7 +392,7 @@ INSTRUCCIÓN: Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloq
                                    file_name="producto_alto_valor.pdf", mime="application/pdf")
         with c6:
             if st.session_state['producto_roadmap']:
-                st.markdown("### 🗂️ Roadmap de Carpetas y Creación con IA")
+                st.markdown("### 🗂️ Roadmap + AI Creation Layer")
                 st.markdown(st.session_state['producto_roadmap'])
 
         if st.session_state['modo_seleccionado'] == 'completo':
