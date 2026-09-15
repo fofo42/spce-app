@@ -3,6 +3,7 @@ import streamlit as st
 import anthropic
 import base64
 import io
+import json
 from pypdf import PdfReader
 
 SECCIONES = [
@@ -10,6 +11,20 @@ SECCIONES = [
     "=== MESSAGE ===", "=== FUNNEL ===", "=== LIFECYCLE ===",
     "=== OFFER_FEED ===", "=== SPCE_FEED ===", "=== DESIGN_FEED ===",
 ]
+
+# Traduce cada separador de texto antiguo a la clave JSON equivalente.
+JSON_KEYS = {
+    "=== DOSSIER ===": "dossier",
+    "=== SEARCH ===": "search",
+    "=== EVALUATION ===": "evaluation",
+    "=== DECISION ===": "decision",
+    "=== MESSAGE ===": "message",
+    "=== FUNNEL ===": "funnel",
+    "=== LIFECYCLE ===": "lifecycle",
+    "=== OFFER_FEED ===": "offer_feed",
+    "=== SPCE_FEED ===": "spce_feed",
+    "=== DESIGN_FEED ===": "design_feed",
+}
 
 ICAI_SYSTEM = """Eres el ICAI-ENGINE V1.2 (DEEP): sistema de inteligencia del cliente con 7 capas
 (state, decision, discovery, conversion, lifecycle). No generas avatares: modelas el SISTEMA DE
@@ -41,42 +56,23 @@ búsquedas e information gaps; alternativas incluyendo DIY, gratis y STATUS QUO 
 drivers motivacionales y emocionales sin sobreinterpretación; blockers y condiciones de decisión;
 funnel como transiciones de estado; lifecycle post-compra.
 
-SALIDA EXACTA CON ESTOS SEPARADORES (no escribas nada fuera de ellos):
-=== DOSSIER ===
-(Dossier del cliente: contexto; matriz de segmentos con priority; problemas/dolores; deseos/motivaciones;
-intentos/creencias; objeciones; language bank con estado y tipo de fuente; awareness×readiness;
-triggers y purchase window; 6 ángulos exactamente 2 money saving / 2 income generation / 2 time-stress-simplicity,
-marcando AXIS_MISMATCH como HYPOTHESIS "no usar sin validar" si un eje no encaja;
-3 promesas con tiempo+transformación+resultado concreto+believability+riesgo+evidencia requerida aplicando PROMISE SAFETY;
-bonos con función; upsells y qué NO debe ser upsell; mapa de evidencia + UNKNOWNs + qué recolectar;
-master opportunity map por impacto×confianza/coste.)
-=== SEARCH ===
-(.15: queries por etapa PROBLEM/SOLUTION/COMPARISON/PURCHASE con estado REAL/DERIVED/SIMULATED;
-necesidades de información; information gaps → oportunidades de contenido, FAQ, prueba, lead magnet.)
-=== EVALUATION ===
-(.16: choice set (producto, competidores, DIY, gratis, status quo, no hacer nada); criterios de evaluación con peso
-relativo; trade-offs aceptados/rechazados; por qué el cliente elegiría esto frente al status quo; gaps percibidos vs alternativas.)
-=== DECISION ===
-(.17: blockers (trust, value, risk, effort, information); condiciones que deben cumplirse para que elija;
-decision levers por segmento; señales observables de intent vs interés.)
-=== MESSAGE ===
-(.18: mensaje por estado de awareness; hooks desde lenguaje REAL; mecanismo a explicar; pruebas requeridas por claim;
-objeciones→respuestas; CTA por readiness; qué NO decir por falta de evidencia.)
-=== FUNNEL ===
-(.19-.20: funnel como estados del cliente (exposición→atención→evaluación→intent→acción→activación): qué necesita
-creer/entender/sentir en cada etapa para avanzar; hipótesis de drop-off con estado epistémico;
-3-5 experimentos (hipótesis, variable, métrica primaria, guardrail).)
-=== LIFECYCLE ===
-(.21: activación y primer quick win; onboarding mínimo; fricción de implementación; retención y recurrencia;
-hipótesis de riesgo de reembolso; timing y condición del upsell lógico.)
-=== OFFER_FEED ===
-(Para el Offer Engine, máx 15 líneas: obstáculos principales → 6 pilares con formatos de entregable; bonus map con
-función; medición; lenguaje del cliente a preservar; segmentos prioritarios; quick win/lifecycle.)
-=== SPCE_FEED ===
-(Para la landing, máx 15 líneas: mensaje por awareness; hooks; objeciones→FAQ; lenguaje a usar/evitar; pruebas
-requeridas; CTA por readiness; promesa segura principal; diferenciación vs status quo.)
-=== DESIGN_FEED ===
-(Para el Design Pack, máx 10 líneas: tono, estilo visual, emoción por segmento, iconografía, qué evitar visualmente.)"""
+SALIDA:
+Responde ÚNICAMENTE con un objeto JSON válido (nada de texto antes o después, nada de bloques ```), con EXACTAMENTE estas 10 claves (cada valor en formato Markdown):
+
+{
+  "dossier": "Dossier del cliente: contexto; matriz de segmentos con priority; problemas/dolores; deseos/motivaciones; intentos/creencias; objeciones; language bank con estado y tipo de fuente; awareness×readiness; triggers y purchase window; 6 ángulos exactamente 2 money saving / 2 income generation / 2 time-stress-simplicity, marcando AXIS_MISMATCH como HYPOTHESIS 'no usar sin validar' si un eje no encaja; 3 promesas con tiempo+transformación+resultado concreto+believability+riesgo+evidencia requerida aplicando PROMISE SAFETY; bonos con función; upsells y qué NO debe ser upsell; mapa de evidencia + UNKNOWNs + qué recolectar; master opportunity map por impacto×confianza/coste.",
+  "search": ".15: queries por etapa PROBLEM/SOLUTION/COMPARISON/PURCHASE con estado REAL/DERIVED/SIMULATED; necesidades de información; information gaps → oportunidades de contenido, FAQ, prueba, lead magnet.",
+  "evaluation": ".16: choice set (producto, competidores, DIY, gratis, status quo, no hacer nada); criterios de evaluación con peso relativo; trade-offs aceptados/rechazados; por qué el cliente elegiría esto frente al status quo; gaps percibidos vs alternativas.",
+  "decision": ".17: blockers (trust, value, risk, effort, information); condiciones que deben cumplirse para que elija; decision levers por segmento; señales observables de intent vs interés.",
+  "message": ".18: mensaje por estado de awareness; hooks desde lenguaje REAL; mecanismo a explicar; pruebas requeridas por claim; objeciones→respuestas; CTA por readiness; qué NO decir por falta de evidencia.",
+  "funnel": ".19-.20: funnel como estados del cliente (exposición→atención→evaluación→intent→acción→activación): qué necesita creer/entender/sentir en cada etapa para avanzar; hipótesis de drop-off con estado epistémico; 3-5 experimentos (hipótesis, variable, métrica primaria, guardrail).",
+  "lifecycle": ".21: activación y primer quick win; onboarding mínimo; fricción de implementación; retención y recurrencia; hipótesis de riesgo de reembolso; timing y condición del upsell lógico.",
+  "offer_feed": "Para el Offer Engine, máx 15 líneas: obstáculos principales → 6 pilares con formatos de entregable; bonus map con función; medición; lenguaje del cliente a preservar; segmentos prioritarios; quick win/lifecycle.",
+  "spce_feed": "Para la landing, máx 15 líneas: mensaje por awareness; hooks; objeciones→FAQ; lenguaje a usar/evitar; pruebas requeridas; CTA por readiness; promesa segura principal; diferenciación vs status quo.",
+  "design_feed": "Para el Design Pack, máx 10 líneas: tono, estilo visual, emoción por segmento, iconografía, qué evitar visualmente."
+}
+
+IMPORTANTE: escapa correctamente comillas dobles, saltos de línea y caracteres especiales dentro de los valores para que el JSON sea válido y parseable. No escribas nada fuera de ese objeto JSON."""
 
 
 def _procesar(files, etiqueta):
@@ -144,19 +140,53 @@ def render(api_key, model_id):
                     "Ejecuta el proceso completo y entrega todas las secciones con sus separadores exactos."})
                 try:
                     client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), model_id)
-                    resp = client.messages.create(model=model_id, max_tokens=20000,
-                        system=ICAI_SYSTEM, messages=[{"role": "user", "content": contenido}])
-                    out = resp.content[0].text
+
+                    st.markdown("##### ✍️ Generando en vivo (texto en bruto; el dossier bonito aparece abajo al terminar):")
+                    with client.messages.stream(
+                        model=model_id, max_tokens=20000,
+                        system=ICAI_SYSTEM,
+                        messages=[
+                            {"role": "user", "content": contenido},
+                            {"role": "assistant", "content": "{"}
+                        ]
+                    ) as stream:
+                        def _generador_texto():
+                            for chunk in stream.text_stream:
+                                yield chunk
+                        raw_text = st.write_stream(_generador_texto())
+                        stream.get_final_message()
+
+                    # Empezamos el texto con "{" porque ese carácter no viene incluido
+                    # en la respuesta (se lo "regalamos" nosotros para forzar que
+                    # Claude continúe directamente en formato JSON).
+                    raw_output = "{" + raw_text
+
+                    try:
+                        datos = json.loads(raw_output)
+                        secciones = {marker: (datos.get(clave) or "").strip() for marker, clave in JSON_KEYS.items()}
+                        out = "\n\n".join(f"{marker}\n{secciones[marker]}" for marker in SECCIONES if secciones[marker])
+                    except json.JSONDecodeError:
+                        # PLAN B: si el JSON viniera mal formado, probamos el formato
+                        # antiguo de separadores de texto como respaldo, para no
+                        # perder el resultado si algo raro pasa.
+                        out = raw_output
+                        secciones = {m: _seccion(out, m) for m in SECCIONES}
+
                     st.session_state['icai_dossier'] = out
-                    st.session_state['icai_sections'] = {m: _seccion(out, m) for m in SECCIONES}
+                    st.session_state['icai_sections'] = secciones
 
                     # === PERSISTENCIA EXPLÍCITA DE LOS FEEDS ===
-                    st.session_state['icai_offer_feed'] = st.session_state['icai_sections'].get("=== OFFER_FEED ===", "")
-                    st.session_state['icai_spce_feed'] = st.session_state['icai_sections'].get("=== SPCE_FEED ===", "")
-                    st.session_state['icai_design_feed'] = st.session_state['icai_sections'].get("=== DESIGN_FEED ===", "")
+                    st.session_state['icai_offer_feed'] = secciones.get("=== OFFER_FEED ===", "")
+                    st.session_state['icai_spce_feed'] = secciones.get("=== SPCE_FEED ===", "")
+                    st.session_state['icai_design_feed'] = secciones.get("=== DESIGN_FEED ===", "")
                     st.session_state['icai_ready'] = True  # Flag para confirmar que ICAI está listo
 
-                    st.success("✅ ICAI DEEP completado: dossier + 6 capas + puentes conectados.")
+                    if not secciones.get("=== OFFER_FEED ==="):
+                        st.warning("⚠️ No se pudo extraer el OFFER_FEED de la respuesta. Revisa el resultado en bruto antes de pasar a la Fase 1.")
+                        with st.expander("🔧 Ver respuesta en bruto (para depurar)"):
+                            st.code(raw_output[:5000])
+                    else:
+                        st.success("✅ ICAI DEEP completado: dossier + 6 capas + puentes conectados.")
                     st.caption(obs.last_line())
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
