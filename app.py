@@ -82,11 +82,13 @@ for clave, valor in {
 # ═══════════════════════════════════════════════════════════════
 # BARRA LATERAL: API KEY, MODELO Y OBSERVABILIDAD
 # ═══════════════════════════════════════════════════════════════
+# Etiquetas cortas: en una barra lateral de 300 px, "Claude Sonnet 4.5
+# (recomendado)" se cortaba con puntos suspensivos en el selector.
 MODELOS = {
-    "Claude Sonnet 4.5 (recomendado)": "claude-sonnet-4-5",
-    "Claude Sonnet 4.5 (versión fija)": "claude-sonnet-4-5-20250929",
-    "Claude Haiku 4.5 (rápido y barato)": "claude-haiku-4-5",
-    "Claude Opus 4.5 (máxima potencia)": "claude-opus-4-5",
+    "Sonnet 4.5 · recomendado": "claude-sonnet-4-5",
+    "Sonnet 4.5 · versión fija": "claude-sonnet-4-5-20250929",
+    "Haiku 4.5 · rápido y barato": "claude-haiku-4-5",
+    "Opus 4.5 · máxima potencia": "claude-opus-4-5",
 }
 MODELO_POR_DEFECTO = "claude-sonnet-4-5"
 
@@ -135,13 +137,13 @@ pagina = st.navigation(
         st.Page("app_pages/inicio.py", title="Inicio",
                 icon=":material/home:", default=True),
         st.Page("app_pages/icai.py", title="Paso 0 · ICAI",
-                icon=":material/explore:"),
+                icon=":material/explore:", url_path="icai"),
         st.Page("app_pages/producto.py", title="Fase 1 · Producto",
-                icon=":material/inventory_2:"),
+                icon=":material/inventory_2:", url_path="producto"),
         st.Page("app_pages/landing.py", title="Fase 2 · Landing",
-                icon=":material/rocket_launch:"),
+                icon=":material/rocket_launch:", url_path="landing"),
         st.Page("app_pages/design.py", title="Design Pack",
-                icon=":material/palette:"),
+                icon=":material/palette:", url_path="design"),
     ],
     position="top",
 )
