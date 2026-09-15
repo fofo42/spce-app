@@ -350,18 +350,28 @@ INSTRUCCIÓN: {instruccion_final}"""})
 
                 try:
                     client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
-                    response = client.messages.create(
+
+                    st.markdown("##### ✍️ Generando en vivo (texto en bruto; el Workbook bonito aparece abajo al terminar):")
+                    live_placeholder = st.empty()
+                    raw_text = ""
+                    with client.messages.stream(
                         model=MODEL_ID, max_tokens=20000,
                         system=OFFER_SYSTEM,
                         messages=[
                             {"role": "user", "content": contenido},
                             {"role": "assistant", "content": "{"}
                         ]
-                    )
+                    ) as stream:
+                        for chunk in stream.text_stream:
+                            raw_text += chunk
+                            live_placeholder.code(raw_text[-4000:], language="json")
+                        stream.get_final_message()
+                    live_placeholder.empty()
+
                     # Empezamos el texto con "{" porque ese carácter no viene incluido
                     # en la respuesta (se lo "regalamos" nosotros para forzar que
                     # Claude continúe directamente en formato JSON).
-                    raw_output = "{" + response.content[0].text
+                    raw_output = "{" + raw_text
 
                     audit, html_part, roadmap = "", "", ""
                     try:
