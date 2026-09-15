@@ -135,9 +135,6 @@ llaman a `st.title`.
   modelo. Se conservan los estilos en línea permitidos y la clase `.page-break`.
 - **`xhtml2pdf` no implementa todo el CSS** (por ejemplo `border-collapse`) y
   puede producir maquetaciones imperfectas sin marcar error.
-- **Sin licencia.** El repositorio no incluye archivo `LICENSE`, así que por
-  defecto queda como «todos los derechos reservados». Conviene elegir una antes
-  de reutilizarlo.
 
 ## Siguiente paso natural
 
@@ -146,7 +143,10 @@ llaman a `st.title`.
   cerrar la pestaña.
 - **Autenticación.** `st.login` con OIDC permitiría que cada usuario traiga su
   propia clave en lugar de compartir la de `secrets.toml`.
-- **Tema en `config.toml`.** El tema actual es un bloque `<style>` con
-  `!important`. Migrarlo a `[theme]` en `.streamlit/config.toml` es más robusto,
-  aunque el degradado de fondo no es expresable como token y habría que decidir
-  si se mantiene.
+- **Tema en `config.toml`.** El tema ya está declarado ahí (`[theme] base =
+  "dark"`). Lo que queda en `app.py` es CSS para lo que los tokens no expresan:
+  el degradado de fondo y la maquetación de la vista previa del workbook.
+
+## Licencia
+
+MIT — ver [LICENSE](LICENSE).
