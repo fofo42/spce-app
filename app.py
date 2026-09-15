@@ -2,8 +2,6 @@ import observability as obs
 import streamlit as st
 import anthropic
 import io
-import json
-import os
 import re
 import base64
 from xhtml2pdf import pisa
@@ -11,30 +9,11 @@ from xhtml2pdf import pisa
 # ═══════════════════════════════════════════════════════════════
 # MEMORIA LOCAL (API KEY + MODELO)
 # ═══════════════════════════════════════════════════════════════
-CONFIG_FILE = "local_config.json"
-
-def load_config():
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            return {}
-    return {}
-
-def save_config(api_key, model_id):
-    with open(CONFIG_FILE, "w") as f:
-        json.dump({"api_key": api_key, "model_id": model_id}, f)
-
-def delete_config():
-    if os.path.exists(CONFIG_FILE):
-        os.remove(CONFIG_FILE)
-
-config = load_config()
-saved_api_key = config.get("api_key", "")
-saved_model = config.get("model_id", "claude-sonnet-4-5")
-
 # ═══════════════════════════════════════════════════════════════
+# API KEY (segura, desde Streamlit Secrets — nunca en disco)
+# ═══════════════════════════════════════════════════════════════
+saved_api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+saved_model = "claude-sonnet-4-5"# ═══════════════════════════════════════════════════════════════
 # HELPERS DE ARCHIVOS
 # ═══════════════════════════════════════════════════════════════
 def procesar_archivos(files, etiqueta):
@@ -99,20 +78,13 @@ MODELOS = {
 
 with st.sidebar:
     st.header("⚙️ Configuración")
-    if saved_api_key:
-        st.success("✅ API Key cargada automáticamente")
-        api_key = st.text_input("API Key de Anthropic", value=saved_api_key, type="password")
-        if api_key != saved_api_key:
-            save_config(api_key, saved_model)
-        if st.button("🗑️ Borrar API Key guardada", use_container_width=True):
-            delete_config()
-            st.rerun()
+        if saved_api_key:
+        st.success("✅ API Key cargada de forma segura")
+        api_key = saved_api_key
     else:
-        api_key_input = st.text_input("API Key de Anthropic", type="password")
+        st.warning("⚠️ No se encontró ANTHROPIC_API_KEY en Secrets")
+        api_key_input = st.text_input("API Key de Anthropic (solo esta sesión)", type="password")
         api_key = api_key_input.strip() if api_key_input else ""
-        if api_key and st.checkbox("💾 Recordar para futuras sesiones"):
-            save_config(api_key, saved_model)
-            st.rerun()
 
     st.markdown("---")
     nombres = list(MODELOS.keys())
@@ -122,8 +94,7 @@ with st.sidebar:
             idx = i
     modelo_sel = st.selectbox("Modelo de IA", nombres, index=idx)
     MODEL_ID = MODELOS[modelo_sel]
-    if MODEL_ID != saved_model:
-        save_config(api_key if api_key else saved_api_key, MODEL_ID)
+  
     st.markdown("---")
     st.info("💡 Key gratis: [console.anthropic.com](https://console.anthropic.com)")
     obs.render_sidebar()
