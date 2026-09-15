@@ -7,13 +7,12 @@ import base64
 from xhtml2pdf import pisa
 
 # ═══════════════════════════════════════════════════════════════
-# MEMORIA LOCAL (API KEY + MODELO)
-# ═══════════════════════════════════════════════════════════════
-# ═══════════════════════════════════════════════════════════════
 # API KEY (segura, desde Streamlit Secrets — nunca en disco)
 # ═══════════════════════════════════════════════════════════════
 saved_api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
-saved_model = "claude-sonnet-4-5"# ═══════════════════════════════════════════════════════════════
+saved_model = "claude-sonnet-4-5"
+
+# ═══════════════════════════════════════════════════════════════
 # HELPERS DE ARCHIVOS
 # ═══════════════════════════════════════════════════════════════
 def procesar_archivos(files, etiqueta):
@@ -78,7 +77,7 @@ MODELOS = {
 
 with st.sidebar:
     st.header("⚙️ Configuración")
-        if saved_api_key:
+    if saved_api_key:
         st.success("✅ API Key cargada de forma segura")
         api_key = saved_api_key
     else:
@@ -94,7 +93,7 @@ with st.sidebar:
             idx = i
     modelo_sel = st.selectbox("Modelo de IA", nombres, index=idx)
     MODEL_ID = MODELOS[modelo_sel]
-  
+
     st.markdown("---")
     st.info("💡 Key gratis: [console.anthropic.com](https://console.anthropic.com)")
     obs.render_sidebar()
