@@ -59,9 +59,9 @@ document.getElementById('ocbtn').onclick = async function() {{
 
 def render(api_key, model_id, producto_html=None):
     st.markdown('<div class="phase-container">', unsafe_allow_html=True)
-    st.subheader(" Design Pack — Prompts listos para Canva, Gamma y más")
+    st.subheader("🎨 Design Pack — Prompts listos para Canva, Gamma y más")
 
-    if st.button("️ Volver al menú", key="v3"):
+    if st.button("⬅️ Volver al menú", key="v3"):
         st.session_state['modo_seleccionado'] = None
         st.rerun()
 
@@ -86,19 +86,16 @@ def render(api_key, model_id, producto_html=None):
             height=120
         )
 
-    # Inyectar DESIGN_FEED del ICAI si existe
     feed3 = st.session_state.get('icai_design_feed', '')
     if feed3:
         st.info("🧠 Inteligencia ICAI conectada: el Design Pack usará el DESIGN_FEED (tono, estilo, emoción por segmento).")
 
     if st.button("🎨 Generar Design Pack", type="primary", use_container_width=True):
         if not api_key:
-            st.error("⚠️ Falta la API Key en la barra lateral")
+            st.error("️ Falta la API Key en la barra lateral")
         else:
-            with st.spinner("🎨 Analizando estilo de referencias y generando prompts por plataforma..."):
+            with st.spinner(" Analizando estilo de referencias y generando prompts por plataforma..."):
                 contenido = []
-
-                # Procesar archivos de estilo
                 for f in (style_files or []):
                     if f.type in ["image/png", "image/jpeg"]:
                         contenido.append({
@@ -119,7 +116,6 @@ def render(api_key, model_id, producto_html=None):
                         except Exception:
                             st.warning(f"⚠️ PDF no legible: {f.name}")
 
-                # Contenido base del producto
                 base_limpia = re.sub(r'\s+', ' ', re.sub(r'<[^>]+>', ' ', base or ""))[:6000]
                 contenido.append({
                     "type": "text",
@@ -131,7 +127,6 @@ FORMATO OBJETIVO: {formato}
 Genera los 4 bloques con sus separadores exactos."""
                 })
 
-                # Inyectar DESIGN_FEED si existe
                 if feed3:
                     contenido.append({
                         "type": "text",
@@ -152,7 +147,6 @@ Genera los 4 bloques con sus separadores exactos."""
                 except Exception as e:
                     st.error(f"❌ Error: {e}")
 
-    # Mostrar resultados
     if st.session_state.get('design_pack'):
         out = st.session_state['design_pack']
 
@@ -167,19 +161,19 @@ Genera los 4 bloques con sus separadores exactos."""
         style, canva, gamma, bing = (bloque(m) for m in
             ["=== STYLE ===", "=== CANVA ===", "=== GAMMA ===", "=== BING ==="])
 
-        st.markdown("### 🧬 Guía de estilo detectada")
+        st.markdown("###  Guía de estilo detectada")
         st.markdown(style or "(sin guía de estilo)")
 
         st.markdown("### 🖌️ CANVA — Magic Design")
         st.code(canva, language=None)
-        _one_click_button(" Copiar prompt y abrir Canva (1 clic)", canva, PLATFORMS["Canva (Magic Design)"])
+        _one_click_button("📋 Copiar prompt y abrir Canva (1 clic)", canva, PLATFORMS["Canva (Magic Design)"])
         st.caption("Dentro de Canva: nuevo diseño → Magic Design → pega con Ctrl+V.")
 
         st.markdown("### 📊 GAMMA — Docs / Presentaciones")
         st.code(gamma, language=None)
-        _one_click_button("📋 Copiar prompt y abrir Gamma (1 clic)", gamma, PLATFORMS["Gamma (Docs y Presentaciones)"])
+        _one_click_button(" Copiar prompt y abrir Gamma (1 clic)", gamma, PLATFORMS["Gamma (Docs y Presentaciones)"])
 
-        st.markdown("### ️ BING IMAGE CREATOR — Portada / Mockup")
+        st.markdown("### 🖼️ BING IMAGE CREATOR — Portada / Mockup")
         st.caption("Único enlace que lleva el prompt YA escrito dentro:")
         st.link_button(
             "🔗 Abrir Bing con el prompt cargado",
@@ -188,7 +182,7 @@ Genera los 4 bloques con sus separadores exactos."""
         )
         st.code(bing, language=None)
 
-        st.markdown("### 🧰 Otras plataformas")
+        st.markdown("###  Otras plataformas")
         otras = st.multiselect(
             "Elige plataformas extra",
             [p for p in PLATFORMS if p not in ("Canva (Magic Design)", "Gamma (Docs y Presentaciones)")]
