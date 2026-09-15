@@ -54,7 +54,7 @@ def procesar_archivos(files, etiqueta):
                 "media_type": f.type, "data": base64.b64encode(f.read()).decode()}})
     return texto, bloques
 
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
 # TEMA OSCURO
 # ═══════════════════════════════════════════════════════════════
 st.set_page_config(page_title="Ecosistema Unificado", page_icon="🧠", layout="wide")
@@ -101,12 +101,14 @@ with st.sidebar:
         if api_key != saved_api_key:
             save_config(api_key, saved_model)
         if st.button("🗑️ Borrar API Key guardada", use_container_width=True):
-            delete_config(); st.rerun()
+            delete_config()
+            st.rerun()
     else:
         api_key_input = st.text_input("API Key de Anthropic", type="password")
         api_key = api_key_input.strip() if api_key_input else ""
         if api_key and st.checkbox("💾 Recordar para futuras sesiones"):
-            save_config(api_key, saved_model); st.rerun()
+            save_config(api_key, saved_model)
+            st.rerun()
 
     st.markdown("---")
     nombres = list(MODELOS.keys())
@@ -132,7 +134,7 @@ for k, v in {"modo_seleccionado": None, "producto_html": None,
         st.session_state[k] = v
 
 # ═══════════════════════════════════════════════════════════════
-# PROMPTS MAESTROS — CEREBRO PROFUNDO V1.0.1 (12 módulos condensados)
+# PROMPTS MAESTROS — CEREBRO PROFUNDO V1.0.1
 # ═══════════════════════════════════════════════════════════════
 OFFER_SYSTEM = """Eres el OFFER MODELING & ENGINEERING ENGINE V1.0.1 — sistema completo de 12 módulos.
 
@@ -157,7 +159,6 @@ INV-15 MODELING ≠ COPYING: modela la lógica, nunca copies nombres/textos/bran
 === V1.0.1.01 SKILL MASTER ===
 Modo de pensar: CUSTOMER → DESIRED TRANSFORMATION → OBSTACLES → NEEDS → SOLUTIONS → DELIVERABLES → OFFER.
 Nunca razonar desde "¿Qué PDF añadimos?". Siempre desde "¿Qué obstáculo sigue sin resolverse?".
-Unidades: TRANSFORMATION (análisis), DELIVERABLE (ingeniería), OFFER ARCHITECTURE (output).
 
 === V1.0.1.02 DEFINITIVE SCHEMAS ===
 Schema canónico de entregable (11 campos):
@@ -238,22 +239,27 @@ if st.session_state['modo_seleccionado'] is None:
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
         if st.button("🧭 ICAI (Paso 0)", use_container_width=True):
-            st.session_state['modo_seleccionado'] = 'icai'; st.rerun()
+            st.session_state['modo_seleccionado'] = 'icai'
+            st.rerun()
     with c2:
-        if st.button(" Modelar Producto", use_container_width=True):
-            st.session_state['modo_seleccionado'] = 'producto'; st.rerun()
+        if st.button("📦 Modelar Producto", use_container_width=True):
+            st.session_state['modo_seleccionado'] = 'producto'
+            st.rerun()
     with c3:
         if st.button("🚀 Modelar Landing", use_container_width=True):
-            st.session_state['modo_seleccionado'] = 'landing'; st.rerun()
+            st.session_state['modo_seleccionado'] = 'landing'
+            st.rerun()
     with c4:
         if st.button("🔄 Flujo Completo", use_container_width=True):
-            st.session_state['modo_seleccionado'] = 'completo'; st.rerun()
+            st.session_state['modo_seleccionado'] = 'completo'
+            st.rerun()
     with c5:
-        if st.button(" Design Pack", use_container_width=True):
-            st.session_state['modo_seleccionado'] = 'design'; st.rerun()
+        if st.button("🎨 Design Pack", use_container_width=True):
+            st.session_state['modo_seleccionado'] = 'design'
+            st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("""
-- **🧭 ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
+- ** ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
 - **📦 Modelar Producto**: Offer Engine V1.0.1 con cerebro profundo (12 módulos): auditoría con DQS real + Workbook PDF + Roadmap.
 - **🚀 Modelar Landing**: brief de página de ventas para Lovable.
 - ** Flujo Completo**: primero el producto; si te convence, pasas a la landing.
@@ -287,9 +293,28 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
         st.rerun()
 
     feed0 = st.session_state.get('icai_offer_feed', '')
-    if feed0:
+    tiene_icai = bool(feed0)
+    if tiene_icai:
         st.info("🧠 Inteligencia ICAI conectada: el Offer Engine usará el OFFER_FEED del dossier de cliente.")
 
+    # ── Selector de modo ──
+    st.markdown("#### 🔧 Modo de trabajo")
+    if tiene_icai:
+        modo = st.radio(
+            "¿Cómo quieres construir el producto?",
+            [
+                "🆕 Diseñar desde cero (solo con inteligencia de cliente + referencia de estilo)",
+                "♻️ Remodelar un producto existente (aportar producto base para superar)",
+            ],
+            index=0,
+            horizontal=True,
+        )
+        desde_cero = modo.startswith("🆕")
+    else:
+        desde_cero = False
+        st.warning("⚠️ Sin ICAI previo, se requiere aportar un producto base.")
+
+    # ── Bloque A: Referencia de estilo ──
     st.markdown("#### 🎯 A) Referencia de estilo y modelado *(cómo debe quedar)*")
     c1, c2 = st.columns(2)
     with c1:
@@ -302,10 +327,13 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
             ["Ebook/Guía", "Plantilla de Notion", "Curso Online", "Libro de Recetas",
              "Software/SaaS", "Servicio", "Otro"])
 
-    st.markdown("#### 📄 B) TU PRODUCTO a modelar *(el contenido real)*")
-    uploaded_producto = st.file_uploader("Sube TU producto (PDF/PNG/JPG)",
+    # ── Bloque B: Producto base (opcional en modo desde-cero) ──
+    st.markdown("#### 📄 B) Producto base *(opcional en modo 'Diseñar desde cero')*")
+    if desde_cero:
+        st.markdown("*El Offer Engine diseñará el producto usando la inteligencia de cliente + la referencia de estilo. Si quieres aportar un producto base como inspiración adicional, puedes hacerlo aquí.*")
+    uploaded_producto = st.file_uploader("Sube TU producto base (PDF/PNG/JPG) — opcional",
         type=['pdf', 'png', 'jpg', 'jpeg'], accept_multiple_files=True, key="prod_files")
-    descripcion_producto = st.text_area("O describe tu producto si no tienes archivos", height=90)
+    descripcion_producto = st.text_area("O describe brevemente el producto base (opcional)", height=90)
 
     c3, c4 = st.columns(2)
     with c3:
@@ -313,35 +341,59 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     with c4:
         transformacion = st.text_input("Transformación deseada", placeholder="Ej: cocinar 2 veces/semana y tener comida para 7 días")
 
+    # ── Validación ──
+    producto_aportado = bool(uploaded_producto) or bool(descripcion_producto.strip())
     if st.button("🧠 Ejecutar Motor V1.0.1 Profundo (State Machine + DQS + Quality Gates)", type="primary", use_container_width=True):
         if not api_key:
-            st.error("⚠️ Introduce tu API Key en la barra lateral")
-        elif not uploaded_producto and not descripcion_producto.strip():
-            st.error("⚠️ Falta TU PRODUCTO: sube archivos en el Bloque B o descríbelo.")
+            st.error("️ Introduce tu API Key en la barra lateral")
+        elif not desde_cero and not producto_aportado:
+            st.error("⚠️ Falta TU PRODUCTO: sube archivos en el Bloque B o descríbelo (o activa el modo 'Diseñar desde cero').")
         else:
-            with st.spinner("🧠 Ejecutando State Machine de 9 pasos: extracción → transformación → cliente → obstáculos → 6 pilares → gaps → DQS → arquitectura → validación..."):
+            modo_texto = "Diseño desde cero" if desde_cero else "Remodelado de producto base"
+            with st.spinner(f"🧠 Ejecutando State Machine de 9 pasos ({modo_texto}): extracción → transformación → cliente → obstáculos → 6 pilares → gaps → DQS → arquitectura → validación..."):
                 ref_texto, ref_bloques = procesar_archivos(uploaded_ref, "REFERENCIA DE ESTILO")
-                prod_texto, prod_bloques = procesar_archivos(uploaded_producto, "PRODUCTO A MODELAR")
+                prod_texto, prod_bloques = procesar_archivos(uploaded_producto, "PRODUCTO BASE")
 
                 contenido = []
+
+                # Inteligencia ICAI (si existe)
                 if feed0:
                     contenido.append({"type": "text", "text":
                         f"=== INTELIGENCIA ICAI (OFFER_FEED) ===\nContexto prioritario de cliente:\n{feed0}"})
+
+                # Referencia de estilo
                 contenido.append({"type": "text", "text": f"""=== REFERENCIA DE ESTILO/MODELADO ===
 (Úsala SOLO para estilo/patrones/técnicas. NO copies su contenido.)
 URL: {referencia_url or '-'}
 Descripción: {descripcion_ref or '-'}
 {ref_texto}"""})
                 contenido.extend(ref_bloques)
-                contenido.append({"type": "text", "text": f"""=== PRODUCTO REAL A MODELAR ===
+
+                # Producto base (puede estar vacío en modo desde-cero)
+                if producto_aportado:
+                    contenido.append({"type": "text", "text": f"""=== PRODUCTO BASE A MODELAR ===
 (Contenido base. Construye el producto SUPERIOR a partir de aquí.)
 {prod_texto}
 Descripción adicional: {descripcion_producto or '-'}"""})
-                contenido.extend(prod_bloques)
-                contenido.append({"type": "text", "text": f"""DATOS DEL PROYECTO:
-TIPO: {tipo_producto} | AVATAR: {avatar} | TRANSFORMACIÓN: {transformacion}
+                    contenido.extend(prod_bloques)
+                else:
+                    contenido.append({"type": "text", "text": """=== PRODUCTO BASE ===
+NO hay producto base aportado. Debes DISEÑAR el producto desde cero usando:
+- La inteligencia de cliente (ICAI OFFER_FEED) como fuente principal de obstáculos, dolores, deseos y lenguaje.
+- La referencia de estilo únicamente como inspiración de formato/patrones.
+Construye un producto superior que resuelva los obstáculos identificados con entregables prácticos e imprimibles."""})
 
-INSTRUCCIÓN: Ejecuta tu State Machine de 9 pasos completa y entrega los 3 bloques con separadores exactos. Aplica los 15 invariantes, el DQS real, los Quality Gates con umbrales, la Folder Architecture y el AI Creation Layer."""})
+                # Instrucción final adaptada al modo
+                instruccion_final = (
+                    "Ejecuta tu proceso interno completo (9 pasos) y entrega los 3 bloques con separadores exactos."
+                    if producto_aportado
+                    else "Ejecuta tu proceso interno completo (9 pasos). Como NO hay producto base, debes INVENTAR la arquitectura de entregables basándote en los obstáculos del cliente (ICAI) y los patrones de la referencia de estilo. Entrega los 3 bloques con separadores exactos."
+                )
+                contenido.append({"type": "text", "text": f"""DATOS DEL PROYECTO:
+TIPO: {tipo_producto} | AVATAR: {avatar or '(inferir de ICAI)'} | TRANSFORMACIÓN: {transformacion or '(inferir de ICAI)'}
+MODO: {'DISEÑO DESDE CERO (sin producto base)' if desde_cero else 'REMODELADO (con producto base)'}
+
+INSTRUCCIÓN: {instruccion_final}"""})
 
                 try:
                     client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
@@ -366,16 +418,17 @@ INSTRUCCIÓN: Ejecuta tu State Machine de 9 pasos completa y entrega los 3 bloqu
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
+    # ── Resultados ──
     if st.session_state['producto_html']:
         if st.session_state['producto_audit']:
-            with st.expander("🧾 Auditoría Ingenieril (Quality Gates, DQS, entregables rechazados/fusionados)", expanded=False):
+            with st.expander(" Auditoría Ingenieril (Quality Gates, DQS, entregables rechazados/fusionados)", expanded=False):
                 st.markdown(st.session_state['producto_audit'])
         st.markdown("### 📄 Vista Previa del Workbook:")
         st.markdown(st.session_state['producto_html'], unsafe_allow_html=True)
 
         c5, c6 = st.columns(2)
         with c5:
-            if st.button("📥 Descargar PDF del Producto", use_container_width=True):
+            if st.button(" Descargar PDF del Producto", use_container_width=True):
                 html_raw = st.session_state['producto_html']
                 if "<html" in html_raw.lower():
                     full_html = html_raw
@@ -401,7 +454,8 @@ INSTRUCCIÓN: Ejecuta tu State Machine de 9 pasos completa y entrega los 3 bloqu
             c7, c8 = st.columns(2)
             with c7:
                 if st.button("✅ Sí, crear Landing", use_container_width=True):
-                    st.session_state['continuar_landing'] = True; st.rerun()
+                    st.session_state['continuar_landing'] = True
+                    st.rerun()
             with c8:
                 if st.button("❌ No, terminar aquí", use_container_width=True):
                     st.session_state.update({'modo_seleccionado': None, 'continuar_landing': False})
@@ -424,7 +478,7 @@ if st.session_state['modo_seleccionado'] == 'landing' or st.session_state['conti
 
     feed2 = st.session_state.get('icai_spce_feed', '')
     if feed2:
-        st.info("🧠 Inteligencia ICAI conectada: el SPCE usará el SPCE_FEED (mensajes por awareness, hooks, objeciones→FAQ).")
+        st.info(" Inteligencia ICAI conectada: el SPCE usará el SPCE_FEED (mensajes por awareness, hooks, objeciones→FAQ).")
 
     if st.session_state['continuar_landing'] and st.session_state['producto_html']:
         producto_ctx = re.sub(r'<[^>]+>', ' ', st.session_state['producto_html'])
@@ -443,7 +497,7 @@ if st.session_state['modo_seleccionado'] == 'landing' or st.session_state['conti
         if not api_key:
             st.error("⚠️ Introduce tu API Key")
         elif not producto_ctx:
-            st.error("⚠️ Falta el producto (genera la Fase 1 o descríbelo)")
+            st.error("️ Falta el producto (genera la Fase 1 o descríbelo)")
         else:
             with st.spinner("🔍 Aplicando SPCE: arquitectura psicológica, copy y brief Mobile-First..."):
                 prompt = f"""PRODUCTO A VENDER (sistema/workbook real):
@@ -477,7 +531,7 @@ Genera el Brief de Construcción completo para Lovable:
 
 # ═══════════════════════════════════════════════════════════════
 # MODO 4: DESIGN PACK (Canva / Gamma / Bing)
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 if st.session_state['modo_seleccionado'] == 'design':
     try:
         import design_pack
