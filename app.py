@@ -10,7 +10,7 @@ from xhtml2pdf import pisa
 
 # ═══════════════════════════════════════════════════════════════
 # MEMORIA LOCAL (API KEY + MODELO)
-# ═══════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
 CONFIG_FILE = "local_config.json"
 
 def load_config():
@@ -122,6 +122,13 @@ with st.sidebar:
         save_config(api_key if api_key else saved_api_key, MODEL_ID)
     st.markdown("---")
     st.info("💡 Key gratis: [console.anthropic.com](https://console.anthropic.com)")
+
+    # Indicador de ICAI disponible
+    if st.session_state.get('icai_ready'):
+        st.success(" ICAI activo en sesión")
+    else:
+        st.warning("⚠️ Sin ICAI en sesión")
+
     obs.render_sidebar()
 
 # ═══════════════════════════════════════════════════════════════
@@ -238,7 +245,7 @@ if st.session_state['modo_seleccionado'] is None:
     st.subheader("¿Qué quieres hacer hoy?")
     c1, c2, c3, c4, c5 = st.columns(5)
     with c1:
-        if st.button("🧭 ICAI (Paso 0)", use_container_width=True):
+        if st.button(" ICAI (Paso 0)", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'icai'
             st.rerun()
     with c2:
@@ -250,20 +257,20 @@ if st.session_state['modo_seleccionado'] is None:
             st.session_state['modo_seleccionado'] = 'landing'
             st.rerun()
     with c4:
-        if st.button("🔄 Flujo Completo", use_container_width=True):
+        if st.button(" Flujo Completo", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'completo'
             st.rerun()
     with c5:
-        if st.button("🎨 Design Pack", use_container_width=True):
+        if st.button(" Design Pack", use_container_width=True):
             st.session_state['modo_seleccionado'] = 'design'
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown("""
-- ** ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
+- **🧭 ICAI (Paso 0)**: modela al cliente y su decisión; genera los puentes OFFER_FEED / SPCE_FEED / DESIGN_FEED.
 - **📦 Modelar Producto**: Offer Engine V1.0.1 con cerebro profundo (12 módulos): auditoría con DQS real + Workbook PDF + Roadmap.
-- **🚀 Modelar Landing**: brief de página de ventas para Lovable.
-- ** Flujo Completo**: primero el producto; si te convence, pasas a la landing.
-- ** Design Pack**: prompts listos para Canva/Gamma/Bing con tu estilo visual.
+- ** Modelar Landing**: brief de página de ventas para Lovable.
+- **🔄 Flujo Completo**: primero el producto; si te convence, pasas a la landing.
+- **🎨 Design Pack**: prompts listos para Canva/Gamma/Bing con tu estilo visual.
     """)
     st.stop()
 
@@ -275,7 +282,7 @@ if st.session_state['modo_seleccionado'] == 'icai':
         import icai_engine
         icai_engine.render(api_key, MODEL_ID)
     except Exception as e:
-        st.error(f"️ Módulo ICAI no disponible: {e}")
+        st.error(f"⚠️ Módulo ICAI no disponible: {e}")
         st.markdown("El archivo `icai_engine.py` debe estar junto a `app.py` (y en la raíz del repo).")
         if st.button("⬅️ Volver al menú", key="v7"):
             st.session_state['modo_seleccionado'] = None
@@ -286,16 +293,27 @@ if st.session_state['modo_seleccionado'] == 'icai':
 # ═══════════════════════════════════════════════════════════════
 if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     st.markdown('<div class="phase-container">', unsafe_allow_html=True)
-    st.subheader("📦 FASE 1: Offer Engine V1.0.1 — Cerebro Profundo (12 módulos)")
+    st.subheader(" FASE 1: Offer Engine V1.0.1 — Cerebro Profundo (12 módulos)")
 
     if st.button("⬅️ Volver al menú", key="v1"):
         st.session_state.update({'modo_seleccionado': None, 'continuar_landing': False})
         st.rerun()
 
+    # === DETECCIÓN ROBUSTA DE ICAI ===
     feed0 = st.session_state.get('icai_offer_feed', '')
-    tiene_icai = bool(feed0)
+    icai_ready = st.session_state.get('icai_ready', False)
+    tiene_icai = bool(feed0) and icai_ready
+
     if tiene_icai:
-        st.info("🧠 Inteligencia ICAI conectada: el Offer Engine usará el OFFER_FEED del dossier de cliente.")
+        st.success("🧠 Inteligencia ICAI conectada: el Offer Engine usará el OFFER_FEED del dossier de cliente.")
+        with st.expander("️ Ver contenido del OFFER_FEED", expanded=False):
+            st.text(feed0[:500] + ("..." if len(feed0) > 500 else ""))
+    else:
+        st.warning("⚠️ Sin ICAI en sesión. El Offer Engine funcionará en modo clásico (requiere producto base).")
+        st.info("💡 Para activar el modo 'Diseñar desde cero', ejecuta primero el Paso 0 (ICAI).")
+        if st.button("🧭 Ir al Paso 0 (ICAI)", use_container_width=True):
+            st.session_state['modo_seleccionado'] = 'icai'
+            st.rerun()
 
     # ── Selector de modo ──
     st.markdown("#### 🔧 Modo de trabajo")
@@ -303,7 +321,7 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
         modo = st.radio(
             "¿Cómo quieres construir el producto?",
             [
-                "🆕 Diseñar desde cero (solo con inteligencia de cliente + referencia de estilo)",
+                " Diseñar desde cero (solo con inteligencia de cliente + referencia de estilo)",
                 "♻️ Remodelar un producto existente (aportar producto base para superar)",
             ],
             index=0,
@@ -312,7 +330,6 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
         desde_cero = modo.startswith("🆕")
     else:
         desde_cero = False
-        st.warning("⚠️ Sin ICAI previo, se requiere aportar un producto base.")
 
     # ── Bloque A: Referencia de estilo ──
     st.markdown("#### 🎯 A) Referencia de estilo y modelado *(cómo debe quedar)*")
@@ -328,7 +345,7 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
              "Software/SaaS", "Servicio", "Otro"])
 
     # ── Bloque B: Producto base (opcional en modo desde-cero) ──
-    st.markdown("#### 📄 B) Producto base *(opcional en modo 'Diseñar desde cero')*")
+    st.markdown("####  B) Producto base *(opcional en modo 'Diseñar desde cero')*")
     if desde_cero:
         st.markdown("*El Offer Engine diseñará el producto usando la inteligencia de cliente + la referencia de estilo. Si quieres aportar un producto base como inspiración adicional, puedes hacerlo aquí.*")
     uploaded_producto = st.file_uploader("Sube TU producto base (PDF/PNG/JPG) — opcional",
@@ -421,14 +438,14 @@ INSTRUCCIÓN: {instruccion_final}"""})
     # ── Resultados ──
     if st.session_state['producto_html']:
         if st.session_state['producto_audit']:
-            with st.expander(" Auditoría Ingenieril (Quality Gates, DQS, entregables rechazados/fusionados)", expanded=False):
+            with st.expander("🧾 Auditoría Ingenieril (Quality Gates, DQS, entregables rechazados/fusionados)", expanded=False):
                 st.markdown(st.session_state['producto_audit'])
         st.markdown("### 📄 Vista Previa del Workbook:")
         st.markdown(st.session_state['producto_html'], unsafe_allow_html=True)
 
         c5, c6 = st.columns(2)
         with c5:
-            if st.button(" Descargar PDF del Producto", use_container_width=True):
+            if st.button("📥 Descargar PDF del Producto", use_container_width=True):
                 html_raw = st.session_state['producto_html']
                 if "<html" in html_raw.lower():
                     full_html = html_raw
@@ -495,9 +512,9 @@ if st.session_state['modo_seleccionado'] == 'landing' or st.session_state['conti
 
     if st.button("🚀 Generar Brief de Landing", type="primary", use_container_width=True):
         if not api_key:
-            st.error("⚠️ Introduce tu API Key")
+            st.error("️ Introduce tu API Key")
         elif not producto_ctx:
-            st.error("️ Falta el producto (genera la Fase 1 o descríbelo)")
+            st.error("⚠️ Falta el producto (genera la Fase 1 o descríbelo)")
         else:
             with st.spinner("🔍 Aplicando SPCE: arquitectura psicológica, copy y brief Mobile-First..."):
                 prompt = f"""PRODUCTO A VENDER (sistema/workbook real):
@@ -531,14 +548,14 @@ Genera el Brief de Construcción completo para Lovable:
 
 # ═══════════════════════════════════════════════════════════════
 # MODO 4: DESIGN PACK (Canva / Gamma / Bing)
-# ══════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
 if st.session_state['modo_seleccionado'] == 'design':
     try:
         import design_pack
         design_pack.render(api_key, MODEL_ID, st.session_state.get('producto_html'))
     except Exception as e:
-        st.error(f"⚠️ Módulo Design Pack no disponible: {e}")
+        st.error(f"️ Módulo Design Pack no disponible: {e}")
         st.markdown("El archivo `design_pack.py` debe estar junto a `app.py` (y en la raíz del repo).")
-        if st.button("⬅️ Volver al menú", key="v4"):
+        if st.button("️ Volver al menú", key="v4"):
             st.session_state['modo_seleccionado'] = None
             st.rerun()
