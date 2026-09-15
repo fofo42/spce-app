@@ -143,7 +143,7 @@ def render(api_key, model_id):
                 contenido.append({"type": "text", "text":
                     "Ejecuta el proceso completo y entrega todas las secciones con sus separadores exactos."})
                 try:
-                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), MODEL_ID)
+                    client = obs.wrap_client(anthropic.Anthropic(api_key=api_key), model_id)
                     resp = client.messages.create(model=model_id, max_tokens=20000,
                         system=ICAI_SYSTEM, messages=[{"role": "user", "content": contenido}])
                     out = resp.content[0].text
@@ -153,6 +153,7 @@ def render(api_key, model_id):
                     st.session_state['icai_spce_feed'] = st.session_state['icai_sections']["=== SPCE_FEED ==="]
                     st.session_state['icai_design_feed'] = st.session_state['icai_sections']["=== DESIGN_FEED ==="]
                     st.success("✅ ICAI DEEP completado: dossier + 6 capas + puentes conectados.")
+                    st.caption(obs.last_line())
                 except Exception as e:
                     st.error(f"❌ Error: {str(e)}")
 
@@ -164,7 +165,7 @@ def render(api_key, model_id):
             "=== EVALUATION ===": "⚖️ Evaluation & Alternatives incl. status quo (.16)",
             "=== DECISION ===": "🎯 Choice & Decision: blockers y levers (.17)",
             "=== MESSAGE ===": "💬 Message & Persuasion por awareness (.18)",
-            "=== FUNNEL ===": "🌀 Funnel como estados + experimentos (.19–.20)",
+            "=== FUNNEL ===": " Funnel como estados + experimentos (.19–.20)",
             "=== LIFECYCLE ===": "♻️ Lifecycle: activación, quick win, reembolso, upsell (.21)",
             "=== OFFER_FEED ===": "🔌 OFFER_FEED → Offer Engine",
             "=== SPCE_FEED ===": "🔌 SPCE_FEED → Landing",
