@@ -149,9 +149,13 @@ def render(api_key, model_id):
                     out = resp.content[0].text
                     st.session_state['icai_dossier'] = out
                     st.session_state['icai_sections'] = {m: _seccion(out, m) for m in SECCIONES}
-                    st.session_state['icai_offer_feed'] = st.session_state['icai_sections']["=== OFFER_FEED ==="]
-                    st.session_state['icai_spce_feed'] = st.session_state['icai_sections']["=== SPCE_FEED ==="]
-                    st.session_state['icai_design_feed'] = st.session_state['icai_sections']["=== DESIGN_FEED ==="]
+
+                    # === PERSISTENCIA EXPLÍCITA DE LOS FEEDS ===
+                    st.session_state['icai_offer_feed'] = st.session_state['icai_sections'].get("=== OFFER_FEED ===", "")
+                    st.session_state['icai_spce_feed'] = st.session_state['icai_sections'].get("=== SPCE_FEED ===", "")
+                    st.session_state['icai_design_feed'] = st.session_state['icai_sections'].get("=== DESIGN_FEED ===", "")
+                    st.session_state['icai_ready'] = True  # Flag para confirmar que ICAI está listo
+
                     st.success("✅ ICAI DEEP completado: dossier + 6 capas + puentes conectados.")
                     st.caption(obs.last_line())
                 except Exception as e:
@@ -162,14 +166,14 @@ def render(api_key, model_id):
         nombres = {
             "=== DOSSIER ===": "📋 Customer Dossier (segmentos, dolores, ángulos, promesas)",
             "=== SEARCH ===": "🔍 Search & Discovery (.15)",
-            "=== EVALUATION ===": "️ Evaluation & Alternatives incl. status quo (.16)",
+            "=== EVALUATION ===": "⚖️ Evaluation & Alternatives incl. status quo (.16)",
             "=== DECISION ===": "🎯 Choice & Decision: blockers y levers (.17)",
-            "=== MESSAGE ===": " Message & Persuasion por awareness (.18)",
+            "=== MESSAGE ===": "💬 Message & Persuasion por awareness (.18)",
             "=== FUNNEL ===": "🌀 Funnel como estados + experimentos (.19–.20)",
             "=== LIFECYCLE ===": "♻️ Lifecycle: activación, quick win, reembolso, upsell (.21)",
             "=== OFFER_FEED ===": "🔌 OFFER_FEED → Offer Engine",
             "=== SPCE_FEED ===": "🔌 SPCE_FEED → Landing",
-            "=== DESIGN_FEED ===": " DESIGN_FEED → Design Pack",
+            "=== DESIGN_FEED ===": "🔌 DESIGN_FEED → Design Pack",
         }
         for m in SECCIONES:
             if secs.get(m):
@@ -183,6 +187,11 @@ def render(api_key, model_id):
         st.markdown("---")
         st.subheader("🚀 ¿Qué quieres hacer ahora?")
         st.markdown("La inteligencia de cliente ya está conectada. Puedes usarla para:")
+
+        # Debug visual: mostrar que los feeds están listos
+        offer_len = len(st.session_state.get('icai_offer_feed', ''))
+        st.caption(f"📊 OFFER_FEED listo: {offer_len} caracteres | SPCE_FEED: {len(st.session_state.get('icai_spce_feed', ''))} chars | DESIGN_FEED: {len(st.session_state.get('icai_design_feed', ''))} chars")
+
         tc1, tc2, tc3 = st.columns(3)
         with tc1:
             if st.button("📦 Modelar Producto (Fase 1)", use_container_width=True, type="primary"):
