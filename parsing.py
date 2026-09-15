@@ -1,14 +1,14 @@
 """Utilidades de parseo de las respuestas del modelo.
 
-Los tres módulos de la app (app.py, icai_engine.py y design_pack.py) tenían
-cada uno su propia copia de la lógica de "buscar una sección entre
-separadores". Aquí se centraliza, junto con la extracción tolerante de JSON.
+Originalmente cada motor de la app tenía su propia copia de la lógica de
+"buscar una sección entre separadores" (en app.py, icai_engine.py y
+design_pack.py). Aquí se centraliza, junto con la extracción tolerante de JSON.
 
-Nota sobre el "Plan B" anterior: app.py y icai_engine.py pedían al modelo un
-objeto JSON puro, pero su respaldo buscaba marcadores de texto
-(`=== FIN_AUDIT ===`, `=== DOSSIER ===`) que el prompt actual ya NO pide
-emitir. Ese respaldo no podía funcionar. `extraer_json` cubre el caso real:
-el modelo envuelve el JSON en un bloque ``` o antepone una línea.
+Nota sobre el "Plan B" anterior: el prompt pide un objeto JSON puro, pero el
+respaldo original buscaba marcadores de texto (`=== FIN_AUDIT ===`,
+`=== DOSSIER ===`) que el prompt actual ya NO pide emitir. Ese respaldo no podía
+funcionar. `extraer_json` cubre el caso real: el modelo envuelve el JSON en un
+bloque ``` o antepone una línea.
 """
 
 from __future__ import annotations
