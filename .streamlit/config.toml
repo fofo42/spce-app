@@ -1,2 +1,11 @@
-   [server]
-   maxUploadSize = 1000
+# Límite de subida en MB (el valor por defecto de Streamlit es 200).
+#
+# Estaba en 1000 (1 GB). Los archivos subidos se leen enteros en memoria y se
+# codifican a base64 (+33 %), así que era un vector trivial de agotamiento de
+# memoria del servidor. Además ningún modelo acepta ese tamaño: el usuario
+# subía 1 GB para recibir igualmente un error de la API de Anthropic, después
+# de haber consumido la memoria.
+#
+# 50 MB cubre de sobra PDFs de referencia, capturas e imágenes de estilo.
+[server]
+maxUploadSize = 50
