@@ -235,21 +235,30 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     if tiene_icai:
         st.markdown('<div class="icai-badge">', unsafe_allow_html=True)
         st.success("🧠 Inteligencia ICAI detectada y disponible")
-        st.markdown("El análisis del Paso 0 está listo para usarse. ¿Cómo quieres modelar el producto?")
-        
-        # Selector de modo
-        modo_modelado = st.radio(
-            "Selecciona el modo de modelado:",
-            [
-                "🆕 Crear desde cero (usando inteligencia ICAI)",
-                "♻️ Remodelar producto existente (subir archivo de referencia)"
-            ],
-            index=0,
-            horizontal=False,
-            key="modo_modelado_radio"
-        )
-        
-        st.session_state['modo_modelado'] = modo_modelado
+        st.markdown("El análisis del Paso 0 está listo para usarse. **Elige cómo quieres modelar el producto:**")
+
+        MODO_DESDE_CERO = "🆕 Crear desde cero (usando inteligencia ICAI)"
+        MODO_REMODELAR = "♻️ Remodelar producto existente (subir archivo de referencia)"
+
+        bcol1, bcol2 = st.columns(2)
+        with bcol1:
+            elegido_cero = st.button("🆕 Crear desde cero\n(usando la inteligencia ICAI del Paso 0)",
+                                      use_container_width=True, key="btn_modo_desde_cero")
+        with bcol2:
+            elegido_remodelar = st.button("♻️ Remodelar producto existente\n(voy a subir un archivo de referencia)",
+                                           use_container_width=True, key="btn_modo_remodelar")
+
+        if elegido_cero:
+            st.session_state['modo_modelado'] = MODO_DESDE_CERO
+        elif elegido_remodelar:
+            st.session_state['modo_modelado'] = MODO_REMODELAR
+
+        modo_actual = st.session_state.get('modo_modelado')
+        if modo_actual in (MODO_DESDE_CERO, MODO_REMODELAR):
+            st.info(f"✅ Modo seleccionado: **{modo_actual}**  (puedes cambiarlo pulsando el otro botón)")
+        else:
+            st.warning("👆 Elige una de las dos opciones de arriba para continuar.")
+
         st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.warning("⚠️ No hay análisis ICAI disponible. Debes subir un producto de referencia.")
@@ -299,6 +308,8 @@ if st.session_state['modo_seleccionado'] in ['producto', 'completo']:
     if st.button("🧠 Ejecutar Motor V1.0.1 (Auditoría + Workbook + Roadmap)", type="primary", use_container_width=True):
         if not api_key:
             st.error("⚠️ Introduce tu API Key en la barra lateral")
+        elif tiene_icai and not st.session_state.get('modo_modelado'):
+            st.error("⚠️ Elige primero cómo quieres modelar el producto (los 2 botones de arriba: 🆕 Crear desde cero o ♻️ Remodelar).")
         elif not tiene_icai and not producto_aportado:
             st.error("️ Falta TU PRODUCTO: sube archivos en el Bloque B o descríbelo (o ejecuta primero el Paso 0 ICAI).")
         else:
