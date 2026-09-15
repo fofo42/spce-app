@@ -162,14 +162,14 @@ def render(api_key, model_id):
         nombres = {
             "=== DOSSIER ===": "📋 Customer Dossier (segmentos, dolores, ángulos, promesas)",
             "=== SEARCH ===": "🔍 Search & Discovery (.15)",
-            "=== EVALUATION ===": "⚖️ Evaluation & Alternatives incl. status quo (.16)",
+            "=== EVALUATION ===": "️ Evaluation & Alternatives incl. status quo (.16)",
             "=== DECISION ===": "🎯 Choice & Decision: blockers y levers (.17)",
-            "=== MESSAGE ===": "💬 Message & Persuasion por awareness (.18)",
-            "=== FUNNEL ===": " Funnel como estados + experimentos (.19–.20)",
+            "=== MESSAGE ===": " Message & Persuasion por awareness (.18)",
+            "=== FUNNEL ===": "🌀 Funnel como estados + experimentos (.19–.20)",
             "=== LIFECYCLE ===": "♻️ Lifecycle: activación, quick win, reembolso, upsell (.21)",
             "=== OFFER_FEED ===": "🔌 OFFER_FEED → Offer Engine",
             "=== SPCE_FEED ===": "🔌 SPCE_FEED → Landing",
-            "=== DESIGN_FEED ===": "🔌 DESIGN_FEED → Design Pack",
+            "=== DESIGN_FEED ===": " DESIGN_FEED → Design Pack",
         }
         for m in SECCIONES:
             if secs.get(m):
@@ -178,4 +178,23 @@ def render(api_key, model_id):
         st.download_button("📥 Descargar dossier DEEP completo", data=st.session_state['icai_dossier'],
                            file_name="icai_dossier_deep.md", mime="text/markdown")
         st.info("✅ Puentes conectados: la Fase 1, la Fase 2 y el Design Pack usarán esta inteligencia automáticamente.")
+
+        # ── Botones de transición ─
+        st.markdown("---")
+        st.subheader("🚀 ¿Qué quieres hacer ahora?")
+        st.markdown("La inteligencia de cliente ya está conectada. Puedes usarla para:")
+        tc1, tc2, tc3 = st.columns(3)
+        with tc1:
+            if st.button("📦 Modelar Producto (Fase 1)", use_container_width=True, type="primary"):
+                st.session_state['modo_seleccionado'] = 'producto'
+                st.rerun()
+        with tc2:
+            if st.button("🎨 Design Pack", use_container_width=True):
+                st.session_state['modo_seleccionado'] = 'design'
+                st.rerun()
+        with tc3:
+            if st.button("🧭 Volver al menú", use_container_width=True):
+                st.session_state['modo_seleccionado'] = None
+                st.rerun()
+
     st.markdown('</div>', unsafe_allow_html=True)
