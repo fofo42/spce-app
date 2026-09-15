@@ -2,6 +2,7 @@ import observability as obs
 import streamlit as st
 import anthropic
 import io
+import json
 import re
 import base64
 from xhtml2pdf import pisa
@@ -148,13 +149,16 @@ PROCESO INTERNO OBLIGATORIO (no omitas pasos):
 4 Seis pilares. 5 Gap analysis (prioridad = impacto × frecuencia × urgencia × riesgo). 6 Engineering de entregables.
 7 Evaluación DQS + gates. 8 Arquitectura (CORE → SUPPORT → MEASUREMENT → PREVENTION → BONUSES). 9 Validación final.
 
-SALIDA EXACTA EN 3 BLOQUES CON ESTOS SEPARADORES:
-=== FIN_AUDIT ===
-(AUDITORÍA INGENIERIL breve en español: Transformation Map en 3 líneas; tabla de pilares [Pilar|Insight|Need|Deliverable|Formato]; Deliverable Matrix [ID|Nombre|Formato|Problema que resuelve|DQS|Decisión]; entregables RECHAZADOS o FUSIONADOS con su motivo; UNKNOWNs y warnings.)
-(Después, HTML COMPLETO del WORKBOOK: <html><head><style> para A4 </style></head><body> con portada centrada (nombre + promesa DE→A + qué incluye) y una sección <h1> por pilar con sus entregables APROBADOS: tablas con bordes, casillas &#9744;, espacios de escritura, cajas de consejo/advertencia, saltos class="page-break". Cero relleno.)
-=== FIN_DEL_PDF ===
-(ROADMAP: estructura de carpetas OFFER/01_CORE_TRANSFORMATION…07_BONUSES indicando qué entregable va en cada una; qué crear con Claude, qué con Gamma, qué con hoja de cálculo; orden de creación y dependencias; instrucciones de maquetación.)
-No escribas nada fuera de esos 3 bloques."""
+SALIDA:
+Responde ÚNICAMENTE con un objeto JSON válido (nada de texto antes o después, nada de bloques ```), con EXACTAMENTE estas 3 claves:
+
+{
+  "audit": "AUDITORÍA INGENIERIL breve en español (formato Markdown): Transformation Map en 3 líneas; tabla de pilares [Pilar|Insight|Need|Deliverable|Formato]; Deliverable Matrix [ID|Nombre|Formato|Problema que resuelve|DQS|Decisión]; entregables RECHAZADOS o FUSIONADOS con su motivo; UNKNOWNs y warnings.",
+  "workbook_html": "HTML COMPLETO del WORKBOOK: <html><head><style> para A4 </style></head><body> con portada centrada (nombre + promesa DE→A + qué incluye) y una sección <h1> por pilar con sus entregables APROBADOS: tablas con bordes, casillas &#9744;, espacios de escritura, cajas de consejo/advertencia, saltos class='page-break'. Cero relleno.",
+  "roadmap": "ROADMAP en Markdown: estructura de carpetas OFFER/01_CORE_TRANSFORMATION…07_BONUSES indicando qué entregable va en cada una; qué crear con Claude, qué con Gamma, qué con hoja de cálculo; orden de creación y dependencias; instrucciones de maquetación."
+}
+
+IMPORTANTE: escapa correctamente comillas dobles, saltos de línea y caracteres especiales dentro de los valores para que el JSON sea válido y parseable. No escribas nada fuera de ese objeto JSON."""
 
 SPCE_SYSTEM = """Eres el SALES PAGE CONVERSION ENGINE (SPCE).
 REGLAS: Mobile-First, Anti-Invención, Message Match, Beneficios > Características, CTA en primera persona repetido 3+ veces.
@@ -349,21 +353,44 @@ INSTRUCCIÓN: {instruccion_final}"""})
                     response = client.messages.create(
                         model=MODEL_ID, max_tokens=20000,
                         system=OFFER_SYSTEM,
-                        messages=[{"role": "user", "content": contenido}]
+                        messages=[
+                            {"role": "user", "content": contenido},
+                            {"role": "assistant", "content": "{"}
+                        ]
                     )
-                    full_output = response.content[0].text
-                    audit, html_part, roadmap = "", full_output, ""
-                    if "=== FIN_DEL_PDF ===" in full_output:
-                        left, roadmap = full_output.split("=== FIN_DEL_PDF ===", 1)
+                    # Empezamos el texto con "{" porque ese carácter no viene incluido
+                    # en la respuesta (se lo "regalamos" nosotros para forzar que
+                    # Claude continúe directamente en formato JSON).
+                    raw_output = "{" + response.content[0].text
+
+                    audit, html_part, roadmap = "", "", ""
+                    try:
+                        datos = json.loads(raw_output)
+                        audit = (datos.get("audit") or "").strip()
+                        html_part = (datos.get("workbook_html") or "").strip()
+                        roadmap = (datos.get("roadmap") or "").strip()
+                    except json.JSONDecodeError:
+                        # PLAN B: si el JSON viniera mal formado, intentamos el
+                        # formato antiguo de separadores de texto como respaldo,
+                        # para no perder el resultado si algo raro pasa.
+                        left = raw_output
+                        if "=== FIN_DEL_PDF ===" in left:
+                            left, roadmap = left.split("=== FIN_DEL_PDF ===", 1)
+                        if "=== FIN_AUDIT ===" in left:
+                            audit, html_part = left.split("=== FIN_AUDIT ===", 1)
+                        else:
+                            html_part = left
+
+                    if not html_part:
+                        st.error("⚠️ No se pudo interpretar la respuesta de la IA. Vuelve a intentarlo; si se repite, mira el detalle abajo.")
+                        with st.expander("🔧 Ver respuesta en bruto (para depurar)"):
+                            st.code(raw_output[:5000])
                     else:
-                        left = full_output
-                    if "=== FIN_AUDIT ===" in left:
-                        audit, html_part = left.split("=== FIN_AUDIT ===", 1)
-                    st.session_state['producto_audit'] = audit.strip()
-                    st.session_state['producto_html'] = html_part.strip()
-                    st.session_state['producto_roadmap'] = roadmap.strip()
-                    st.success("✅ Motor V1.0.1 completado: auditoría, workbook y roadmap generados.")
-                    st.caption(obs.last_line())
+                        st.session_state['producto_audit'] = audit
+                        st.session_state['producto_html'] = html_part
+                        st.session_state['producto_roadmap'] = roadmap
+                        st.success("✅ Motor V1.0.1 completado: auditoría, workbook y roadmap generados.")
+                        st.caption(obs.last_line())
                 except Exception as e:
                     st.error(f" Error: {str(e)}")
 
