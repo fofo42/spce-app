@@ -1,2 +1,35 @@
-   [server]
-   maxUploadSize = 1000
+# Límite de subida en MB (el valor por defecto de Streamlit es 200).
+#
+# Estaba en 1000 (1 GB). Los archivos subidos se leen enteros en memoria y se
+# codifican a base64 (+33 %), así que era un vector trivial de agotamiento de
+# memoria del servidor. Además ningún modelo acepta ese tamaño: el usuario
+# subía 1 GB para recibir igualmente un error de la API de Anthropic, después
+# de haber consumido la memoria.
+#
+# 50 MB cubre de sobra PDFs de referencia, capturas e imágenes de estilo.
+[server]
+maxUploadSize = 50
+
+# Tema oscuro declarado como tal.
+#
+# Sin este bloque, Streamlit usa su tema CLARO por defecto mientras app.py
+# inyecta CSS que pinta el área principal en oscuro y fuerza color claro en
+# todos los textos. Eso dejaba los componentes de Streamlit con fondos claros y
+# texto claro encima:
+#
+#   - Alertas (st.info/st.warning/st.error): texto #e0e0e0 sobre un fondo claro
+#     tintado -> contraste ~1.2:1, muy por debajo del 4.5:1 de WCAG. Los avisos
+#     como "Introduce tu API Key" eran ilegibles.
+#   - Sidebar claro (rgb(240,242,246)) pegado a un área principal oscura.
+#   - Cabecera blanca.
+#   - Las métricas de Observabilidad quedaban invisibles.
+#
+# Declarando el tema, los componentes de Streamlit usan colores oscuros y el
+# CSS de app.py se limita a lo que los tokens no expresan (el degradado de
+# fondo y la previsualización del workbook).
+[theme]
+base = "dark"
+primaryColor = "#00d4ff"
+backgroundColor = "#0a0e27"
+secondaryBackgroundColor = "#1e2540"
+textColor = "#e0e0e0"

@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────
+# CREDENCIALES — nunca subir esto
+# ─────────────────────────────────────────────────────────────────
+# La app lee ANTHROPIC_API_KEY de .streamlit/secrets.toml. Si este archivo
+# se commitea, la clave queda expuesta en el historial de Git de forma
+# permanente (aunque después se borre el archivo).
+.streamlit/secrets.toml
+
+# ─────────────────────────────────────────────────────────────────
+# Entornos virtuales
+# ─────────────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─────────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# ─────────────────────────────────────────────────────────────────
+# Sistema / editores
+# ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

@@ -82,17 +82,36 @@ class _ClientProxy:
 def wrap_client(client, model_id):
     return _ClientProxy(client, model_id)
 
+
+@st.cache_resource(show_spinner=False)
+def cliente(api_key):
+    """Cliente de Anthropic compartido.
+
+    Antes se construía uno nuevo en cada llamada, lo que implica un pool de
+    conexiones y un handshake TLS nuevos cada vez. cache_resource lo reutiliza
+    entre reruns. La clave forma parte de la clave de caché, así que dos
+    usuarios con claves distintas nunca comparten cliente.
+    """
+    import anthropic
+    return anthropic.Anthropic(api_key=api_key)
+
+
+def cliente_observado(api_key, model_id):
+    """Cliente listo para usar, con el contador de tokens y coste conectado."""
+    return wrap_client(cliente(api_key), model_id)
+
+
 def render_sidebar():
     _init()
     o = st.session_state.obs
     st.markdown("---")
-    st.markdown("### 📊 Observabilidad")
+    st.subheader("Observabilidad", icon=":material/monitoring:")
     c1, c2 = st.columns(2)
     c1.metric("Operaciones", o["calls"])
     c2.metric("Tiempo total", f"{o['secs']:.0f} s")
     c1.metric("Tokens", f"{o['in'] + o['out']:,}")
     c2.metric("Coste est.", f"${o['cost']:.4f}")
-    if st.button("🔄 Reiniciar contadores", use_container_width=True):
+    if st.button("Reiniciar contadores", width="stretch", icon=":material/restart_alt:"):
         st.session_state.obs = {"calls": 0, "in": 0, "out": 0,
                                 "cost": 0.0, "secs": 0.0, "last": None}
         st.rerun()

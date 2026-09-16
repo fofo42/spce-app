@@ -1,4 +1,14 @@
-streamlit
-anthropic
-pypdf
-xhtml2pdf
+# Dependencias de la app.
+#
+# Estaban sin fijar: cualquier release nuevo de Streamlit podía romper la app
+# sin aviso (y de hecho el código ya usaba APIs que Streamlit tenía marcadas
+# como obsoletas). El mínimo indicado es la versión contra la que está
+# verificada.
+streamlit>=1.63,<2
+anthropic>=1.5,<2
+pypdf>=6.18,<7
+xhtml2pdf>=0.2.19,<0.3
+
+# El saneado del HTML del workbook (sanitize.py) está escrito sobre la
+# biblioteca estándar a propósito, para no añadir dependencias al camino de
+# seguridad.

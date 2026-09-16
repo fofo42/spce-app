@@ -17,9 +17,14 @@
       ]
     }
   },
-  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
+  "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y < packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; echo '✅ Dependencias instaladas'",
+  // El arranque original llevaba --server.enableCORS false y
+  // --server.enableXsrfProtection false. Desactivar la protección XSRF en un
+  // Codespace con el puerto reenviado y una API Key viva no es aceptable:
+  // Streamlit funciona con los valores por defecto. Si el preview diera
+  // problemas de conexión, actívalos solo de forma temporal y consciente.
   "postAttachCommand": {
-    "server": "streamlit run app.py --server.enableCORS false --server.enableXsrfProtection false"
+    "server": "streamlit run app.py"
   },
   "portsAttributes": {
     "8501": {

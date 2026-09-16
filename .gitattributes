@@ -1,0 +1,19 @@
+# Normaliza los finales de línea a LF en todo el repositorio.
+#
+# Motivo: los .py y requirements.txt estaban commiteados con CRLF (autoría en
+# Windows) mientras que config.toml y devcontainer.json usaban LF. Esa mezcla
+# hacía que el mismo archivo apareciera distinto según la plataforma y
+# ensuciaba los diffs. Con `eol=lf` el repositorio es siempre LF y Git
+# convierte al hacer checkout si el usuario lo necesita.
+* text=auto eol=lf
+
+# Binarios: nunca normalizar.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
